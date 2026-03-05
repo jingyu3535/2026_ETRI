@@ -1,11 +1,11 @@
 # 2026_ETRI Paper Release
 
-This repository is the code release for the paper experiments built on LeRobot with local SmolVLA-related changes.
+This repository is the code release for paper experiments built on LeRobot with local SmolVLA-related changes.
 
 ## Base
 - Upstream: `huggingface/lerobot`
 - Base commit: `15724826`
-- Paper branch: `paper_release`
+- Release branch: `paper_release`
 
 ## Repository scope
 - Included: `src/`, `scripts/`, packaging/dependency files
@@ -13,34 +13,22 @@ This repository is the code release for the paper experiments built on LeRobot w
 
 ## 1) Environment
 This work used a split pipeline:
-- Local robot host for data collection/inference with two SO101 arms (`leader`, `follower`)
-- Remote server for model training and cross-attention dump analysis
+- Local robot host for data collection and robot-side inference (`SO101 leader + follower`)
+- Remote server for training and attention dump analysis
 
-### Local robot host (collection/inference)
-- Hardware: `SO101 leader + SO101 follower`
+### Local robot host
+- Hostname: `etri01`
 - OS: `Ubuntu 22.04.5 LTS`
-- Python: `3.10.19` (conda env: `lerobot`)
-- CUDA: `11.8` (PyTorch build)
-- PyTorch: `2.7.0+cu118`
-- GPU: `NVIDIA GeForce GTX TITAN X (12209 MiB, driver 470.256.02)`
-- Notes: robot control and episode recording were executed locally
+- Python: `3.10.19` (conda env `lerobot`)
+- PyTorch/CUDA: `2.7.0+cu118 / 11.8`
+- GPU: `NVIDIA GeForce GTX TITAN X` (12209 MiB, driver `470.256.02`)
 
-### Remote training server (training/analysis)
-- OS: `Ubuntu 24.04.3 LTS (x86_64)` (verified from training log)
-- Python: `3.10.19` (conda env: `lerobot`)
-- CUDA: `12.4`
-- PyTorch: `2.6.0+cu124`
-- GPU: `NVIDIA H200 NVL (143771 MiB, driver 570.195.03)`
-- Notes: model training and cross-attention dump were executed on server
-
-### Data transfer
-- Episode data was transferred from local host to server via Termius/SCP workflow.
-- Verified transfer example:
-```bash
-scp -o 'ProxyJump=etri01@<jump_host>' \
-  /home/etri01/Downloads/smolvla/compare_object_attention.py \
-  etri01@10.77.23.171:/home/etri01/Downloads/smolvla/
-```
+### Remote training server
+- Hostname: `user`
+- OS: `Ubuntu 24.04.3 LTS (x86_64)`
+- Python: `3.10.19` (conda env `lerobot`)
+- PyTorch/CUDA: `2.6.0+cu124 / 12.4`
+- GPU: `NVIDIA H200 NVL` (143771 MiB, driver `570.195.03`)
 
 ## 2) Installation
 ```bash
@@ -50,11 +38,9 @@ pip install --upgrade pip
 pip install -e ".[smolvla]"
 ```
 
-## 3) Dataset preparation
-Describe local collection first, then server-side preprocessing.
-
+## 3) Dataset collection and transfer
 ```bash
-# [Local host] collect episode data with SO101 leader/follower
+# [Local host] SO101 teleoperation data collection example
 OPENCV_VIDEOIO_PRIORITY_FFMPEG=0 OPENCV_VIDEOIO_PRIORITY_GSTREAMER=0 lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
@@ -70,19 +56,36 @@ OPENCV_VIDEOIO_PRIORITY_FFMPEG=0 OPENCV_VIDEOIO_PRIORITY_GSTREAMER=0 lerobot-rec
   --dataset.num_episodes=75 \
   --dataset.reset_time_s=0 \
   --dataset.single_task="pick the banana and put it in the blue box"
-
-# [Server] copy uploaded episodes into training dataset path
-# TODO: server-side import/arrange command(s)
-
-# [Server] preprocessing (if used)
-# TODO: preprocessing command(s)
 ```
 
-## 4) Training
-Run on remote server.
+Data was transferred between local and server using SCP/rsync in Termius-based workflow.
 
+## 4) Training runs used in paper
+Primary reported run:
+- `smolVLA_task_box_1050` (main run)
+
+Additional comparison runs:
+- `smolVLA_task_box_750` (fewer episodes)
+- `smolVLA_task_box_1050_toponly` (top camera only)
+
+All three runs use:
+- `steps=500000`
+- `batch_size=32`
+- `seed=1000`
+- `policy.optimizer_lr=5e-5`
+- `policy.scheduler_warmup_steps=15000`
+- `policy.scheduler_decay_steps=500000`
+
+Run matrix (from `checkpoints/500000/pretrained_model/train_config.json`):
+
+| Run | dataset.repo_id | dataset.root | rename_map | output_dir |
+| --- | --- | --- | --- | --- |
+| `smolVLA_task_box_750` | `task_box_100` | `/home/internship/data/etri01/task_box_100` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_750` |
+| `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_1050` |
+| `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `top->camera1` | `/home/internship/model/smolVLA_task_box_1050_toponly` |
+
+Main run command:
 ```bash
-# [Server] full train command used for reported result
 cd /home/internship/projects/lerobot
 conda activate lerobot
 lerobot-train \
@@ -102,14 +105,9 @@ lerobot-train \
   --policy.scheduler_decay_steps=500000
 ```
 
-## 5) Evaluation
-Use exact checkpoint path. If inference was run on local robot host, separate it from server evaluation.
-
+## 5) Evaluation and attention dump
 ```bash
-# [Server] offline eval command (if used)
-# TODO
-
-# [Local host] robot-side inference/eval command (if used)
+# [Local host] robot-side inference/evaluation example
 lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
@@ -130,30 +128,31 @@ lerobot-record \
   --policy.type=smolvla \
   --policy.pretrained_path=/home/etri01/model/smolVLA_task_box_1050/checkpoints/500000/pretrained_model
 
-# [Server] cross-attention dump command
-/home/etri01/miniforge3/envs/lerobot/bin/python \
-  /home/etri01/projects/lerobot/scripts/dump_action_attn_eval.py \
-  --dataset_root /home/etri01/model/eval_task_box_1050 \
-  --dataset_repo_id etri01/eval_task_box_1050 \
-  --checkpoint /home/etri01/model/smolVLA_task_box_1050_toponly/checkpoints/500000/pretrained_model \
-  --dump_dir /home/etri01/model/eval_task_box_1050_toponly/action_attn_dump_img/_raw_tuned \
-  --dump_action \
+# [Server] attention dump example
+PYTHONPATH=/home/internship/projects/lerobot/src \
+  /home/internship/miniforge3/envs/lerobot/bin/python \
+  /home/internship/projects/lerobot/scripts/dump_action_attn_eval.py \
+  --dataset_root /home/internship/model/eval_task_box_750_0202 \
+  --dataset_repo_id etri01/eval_task_box_750_0202 \
+  --checkpoint /home/internship/model/smolVLA_task_box_750/checkpoints/500000/pretrained_model \
+  --dump_dir /home/internship/model/eval_task_box_750_0202/action_attn_dump_img_0211/_raw_tuned \
   --episodes 0-35 \
+  --layers 1,5,9,13,15 \
+  --denoise_steps 0,5,9 \
+  --action_step all \
   --num_frames -1 \
   --stride 1 \
-  --layers 1,3,5,7,9,11,13,15 \
-  --denoise_steps all \
-  --action_step all \
-  --heads mean \
   --log_every 50 \
   --log_time
 ```
 
 ## 6) Expected results
-- Main metric(s): `TODO`
-- Expected range: `TODO`
-- Random seed(s): `TODO`
-- Number of runs and averaging rule: `TODO`
+Main run (`task_box_1050`) runtime summary:
+- `cfg.steps=500000`
+- `dataset.num_frames=421143`
+- `dataset.num_episodes=1050`
+- `effective batch size=32`
+- Final task metrics and success rates: `TODO`
 
 ## 7) Local code changes summary
 Core modified files:
