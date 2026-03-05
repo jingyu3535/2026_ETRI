@@ -110,6 +110,10 @@ Data was transferred between local and server using SCP/rsync in Termius-based w
 Language prompt template used for collection/evaluation:
 - `pick the <object> and put it in the <box> box`
 
+Camera naming note:
+- In paper text we refer to `wrist-view` and `top-view`.
+- In released data/code keys, these are stored as `observation.images.front` (wrist-view) and `observation.images.top` (top-view).
+
 Verified prompts and counts from `/home/etri01/.cache/huggingface/lerobot/etri01/task_box_1050/meta/episodes/chunk-000/*.parquet`:
 - `pick the banana and put it in the transparent box`: `100`
 - `pick the socks and put it in the transparent box`: `100`
