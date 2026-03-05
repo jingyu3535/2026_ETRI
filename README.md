@@ -105,9 +105,9 @@ Run matrix (from `checkpoints/500000/pretrained_model/train_config.json`):
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `top->camera1` | `/home/internship/model/smolVLA_task_box_1050_toponly` |
 
 Run timeline (known dates):
-- `smolVLA_task_box_1050` (main): training log starts on `2026-02-13`, with `500000` checkpoint artifacts around `2026-02-15`.
-- `smolVLA_task_box_1050_toponly`: server checkpoint timestamps show training progressed from at least `2026-02-25 (020000)` to `2026-02-27 (500000)`.
-- `smolVLA_task_box_750`: currently inferred as around `2026-01-26` from copied artifact mtimes; should be finalized with server-side `stat` output for paper text.
+- `smolVLA_task_box_750`: server checkpoint timestamps show `020000` at `2026-01-23` and `500000` at `2026-01-25`.
+- `smolVLA_task_box_1050` (main): training log starts on `2026-02-13`, with `020000` checkpoint at `2026-02-13` and `500000` at `2026-02-15`.
+- `smolVLA_task_box_1050_toponly`: server checkpoint timestamps show `020000` at `2026-02-25` and `500000` at `2026-02-27`.
 
 Main run command:
 ```bash

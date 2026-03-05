@@ -143,16 +143,28 @@ This file tracks evidence used to avoid memory-only documentation.
   - additional blue stage: `450` (`134/150/166`)
 - Note: this is a derived breakdown for narrative consistency (`300 + 450 = 750`), while final `task_box_1050` blue totals are `234/250/266`.
 
-15. Server-side training time evidence for `smolVLA_task_box_1050_toponly`
+15. Server-side training time evidence for all three runs
 - Source: user-provided server `stat` output on `2026-03-05`:
+  - `/home/internship/model/smolVLA_task_box_750/checkpoints/020000/pretrained_model/model.safetensors`
+  - `/home/internship/model/smolVLA_task_box_750/checkpoints/500000/pretrained_model/model.safetensors`
+  - `/home/internship/model/smolVLA_task_box_750/checkpoints/500000/training_state/training_step.json`
+  - `/home/internship/model/smolVLA_task_box_1050/checkpoints/020000/pretrained_model/model.safetensors`
+  - `/home/internship/model/smolVLA_task_box_1050/checkpoints/500000/pretrained_model/model.safetensors`
+  - `/home/internship/model/smolVLA_task_box_1050/checkpoints/500000/training_state/training_step.json`
   - `/home/internship/model/smolVLA_task_box_1050_toponly/checkpoints/020000/pretrained_model/model.safetensors`
   - `/home/internship/model/smolVLA_task_box_1050_toponly/checkpoints/500000/pretrained_model/model.safetensors`
   - `/home/internship/model/smolVLA_task_box_1050_toponly/checkpoints/500000/training_state/training_step.json`
 - Values:
-  - `020000`: `2026-02-25 20:01:58 +0900`
-  - `500000`: `2026-02-27 16:55:53 +0900`
-  - `training_step.json` (500000): `2026-02-27 16:55:54 +0900`
-- Interpretation: training occurred on server by `2026-02-27`; local `2026-03-05` mtimes are not used as training-date evidence.
+  - `750/020000`: `2026-01-23 19:19:18 +0900`
+  - `750/500000`: `2026-01-25 03:09:15 +0900`
+  - `750/training_step.json`: `2026-01-25 03:09:15 +0900`
+  - `1050/020000`: `2026-02-13 19:03:22 +0900`
+  - `1050/500000`: `2026-02-15 00:51:43 +0900`
+  - `1050/training_step.json`: `2026-02-15 00:51:43 +0900`
+  - `1050_toponly/020000`: `2026-02-25 20:01:58 +0900`
+  - `1050_toponly/500000`: `2026-02-27 16:55:53 +0900`
+  - `1050_toponly/training_step.json`: `2026-02-27 16:55:54 +0900`
+- Interpretation: date anchors for all runs are based on server checkpoint timestamps.
 
 16. `toponly` train command presence without shell timestamp
 - Source: user-provided server `~/.bash_history` extraction on `2026-03-05`
