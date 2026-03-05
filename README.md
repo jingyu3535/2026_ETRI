@@ -55,7 +55,37 @@ pip install -e ".[smolvla]"
 pip install -e ".[smolvla,feetech]"
 ```
 
-## 3) Dataset collection and transfer
+## 3) Robot Setup (SO101)
+Run these on the local robot host before data recording.
+
+```bash
+conda activate lerobot
+
+# 1) Identify motor USB ports (run once per arm by unplug/replug)
+lerobot-find-port
+
+# 2) Identify available cameras
+lerobot-find-cameras
+
+# 3) Calibrate leader and follower
+lerobot-calibrate --teleop.type=so101_leader --teleop.port=/dev/ttyACM0 --teleop.id=my_leader
+lerobot-calibrate --robot.type=so101_follower --robot.port=/dev/ttyACM1 --robot.id=my_follower
+```
+
+Optional sanity check before recording:
+
+```bash
+lerobot-teleoperate \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.id=my_follower \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_leader \
+  --display_data=true
+```
+
+## 4) Dataset collection and transfer
 ```bash
 # [Local host] SO101 teleoperation data collection example
 OPENCV_VIDEOIO_PRIORITY_FFMPEG=0 OPENCV_VIDEOIO_PRIORITY_GSTREAMER=0 lerobot-record \
@@ -97,7 +127,7 @@ Why transparent -> blue:
 - Practical observation during early inference was unstable target-box recognition on transparent container, so later collection used blue box for stronger visual contrast.
 - This reason is observation-based; no separate quantitative ablation log is currently archived.
 
-## 4) Training runs used in paper
+## 5) Training runs used in paper
 Primary reported run:
 - `smolVLA_task_box_1050` (main run)
 
@@ -147,7 +177,7 @@ lerobot-train \
   --policy.scheduler_decay_steps=500000
 ```
 
-## 5) Evaluation and attention dump
+## 6) Evaluation and attention dump
 ```bash
 # [Local host] robot-side inference/evaluation example
 lerobot-record \
@@ -188,7 +218,7 @@ PYTHONPATH=/home/internship/projects/lerobot/src \
   --log_time
 ```
 
-## 6) Expected results
+## 7) Expected results
 Main run (`task_box_1050`) runtime summary:
 - `cfg.steps=500000`
 - `dataset.num_frames=421143`
@@ -196,7 +226,7 @@ Main run (`task_box_1050`) runtime summary:
 - `effective batch size=32`
 - Final task metrics and success rates: `TODO`
 
-## 7) Local code changes summary
+## 8) Local code changes summary
 Core modified files:
 - `src/lerobot/datasets/dataset_tools.py`
 - `src/lerobot/datasets/lerobot_dataset.py`
@@ -208,8 +238,8 @@ Core modified files:
 
 See also `PAPER_RELEASE.md`.
 
-## 8) Security note
+## 9) Security note
 Keep credentials in environment variables only. Do not hardcode tokens or keys.
 
-## 9) Provenance
+## 10) Provenance
 Evidence and source line references are documented in `REPRO_EVIDENCE.md`.
