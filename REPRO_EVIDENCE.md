@@ -45,15 +45,28 @@ This file tracks evidence used to avoid memory-only documentation.
 8. Local-to-server transfer command via jump host
 - Source: `/home/etri01/.bash_history:1159`
 
+9. Local host runtime stack
+- Source: local shell output on `2026-03-05` (`conda env: lerobot`)
+- Values:
+  - OS: `Ubuntu 22.04.5 LTS`
+  - Python: `3.10.19`
+  - PyTorch/CUDA: `2.7.0+cu118 / 11.8`
+  - GPU: `NVIDIA GeForce GTX TITAN X`, driver `470.256.02`
+
+10. Remote training server runtime stack
+- Source: user-provided server shell output on `2026-03-05` (`internship@user`, `conda env: lerobot`)
+- Values:
+  - OS: `Ubuntu 24.04.3 LTS`
+  - Python: `3.10.19`
+  - PyTorch/CUDA: `2.6.0+cu124 / 12.4`
+  - GPU: `NVIDIA H200 NVL`, driver `570.195.03`
+
 ## Partial / needs confirmation
 
-1. Local robot host software stack
-- Missing exact pinned versions for Python/CUDA/PyTorch on local host.
-
-2. Remote server exact package lock state
+1. Remote server exact package lock state
 - `train_config.json` captures model/training config, but not full pip/conda lockfile at run time.
 
-3. Final paper-selected run
+2. Final paper-selected run
 - Multiple runs/checkpoints exist (`smolVLA_task_box_750`, `smolVLA_task_box_1050`, `smolVLA_task_box_1050_toponly`).
 - Final run to report should be explicitly chosen and tagged.
 

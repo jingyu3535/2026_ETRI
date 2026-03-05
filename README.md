@@ -18,16 +18,19 @@ This work used a split pipeline:
 
 ### Local robot host (collection/inference)
 - Hardware: `SO101 leader + SO101 follower`
-- OS: `TODO`
-- Python: `TODO`
+- OS: `Ubuntu 22.04.5 LTS`
+- Python: `3.10.19` (conda env: `lerobot`)
+- CUDA: `11.8` (PyTorch build)
+- PyTorch: `2.7.0+cu118`
+- GPU: `NVIDIA GeForce GTX TITAN X (12209 MiB, driver 470.256.02)`
 - Notes: robot control and episode recording were executed locally
 
 ### Remote training server (training/analysis)
 - OS: `Ubuntu 24.04.3 LTS (x86_64)` (verified from training log)
-- Python: `TODO` (conda env name was `lerobot`)
-- CUDA: `TODO`
-- PyTorch: `TODO`
-- GPU: `TODO`
+- Python: `3.10.19` (conda env: `lerobot`)
+- CUDA: `12.4`
+- PyTorch: `2.6.0+cu124`
+- GPU: `NVIDIA H200 NVL (143771 MiB, driver 570.195.03)`
 - Notes: model training and cross-attention dump were executed on server
 
 ### Data transfer
