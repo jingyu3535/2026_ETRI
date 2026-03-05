@@ -104,6 +104,12 @@ Run matrix (from `checkpoints/500000/pretrained_model/train_config.json`):
 | `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_1050` |
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `top->camera1` | `/home/internship/model/smolVLA_task_box_1050_toponly` |
 
+Run timeline (known dates):
+- `smolVLA_task_box_750`: checkpoint artifacts indicate completion around `2026-01-26` (from copied checkpoint mtimes).
+- `smolVLA_task_box_1050` (main): training log starts on `2026-02-13`, with `500000` checkpoint artifacts around `2026-02-15`.
+- `smolVLA_task_box_1050_toponly`: server checkpoint timestamps show training progressed from at least `2026-02-25 (020000)` to `2026-02-27 (500000)`.
+- `2026-03-05` timestamps on local `smolVLA_task_box_1050_toponly` copy are treated as local transfer/edit timing, not the original server training start.
+
 Main run command:
 ```bash
 cd /home/internship/projects/lerobot

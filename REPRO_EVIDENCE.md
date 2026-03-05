@@ -143,6 +143,23 @@ This file tracks evidence used to avoid memory-only documentation.
   - additional blue stage: `450` (`134/150/166`)
 - Note: this is a derived breakdown for narrative consistency (`300 + 450 = 750`), while final `task_box_1050` blue totals are `234/250/266`.
 
+15. Server-side training time evidence for `smolVLA_task_box_1050_toponly`
+- Source: user-provided server `stat` output on `2026-03-05`:
+  - `/home/internship/model/smolVLA_task_box_1050_toponly/checkpoints/020000/pretrained_model/model.safetensors`
+  - `/home/internship/model/smolVLA_task_box_1050_toponly/checkpoints/500000/pretrained_model/model.safetensors`
+  - `/home/internship/model/smolVLA_task_box_1050_toponly/checkpoints/500000/training_state/training_step.json`
+- Values:
+  - `020000`: `2026-02-25 20:01:58 +0900`
+  - `500000`: `2026-02-27 16:55:53 +0900`
+  - `training_step.json` (500000): `2026-02-27 16:55:54 +0900`
+- Interpretation: training occurred on server by `2026-02-27`; local `2026-03-05` mtimes are not used as training-date evidence.
+
+16. `toponly` train command presence without shell timestamp
+- Source: user-provided server `~/.bash_history` extraction on `2026-03-05`
+- Value:
+  - `NO_TIMESTAMP | cd /home/internship/projects/lerobot && lerobot-train ... --dataset.repo_id=task_box_1050_toponly ...`
+- Interpretation: command exists, but shell-history timestamp metadata was unavailable; server checkpoint `stat` times are the reliable date anchor.
+
 ## Partial / needs confirmation
 
 1. Remote server exact package lock state at training time
@@ -152,7 +169,8 @@ This file tracks evidence used to avoid memory-only documentation.
 - Task success metrics and confidence intervals are not yet inserted in README.
 
 3. Byte-level equality between local copied checkpoints and server originals
-- Local hashes are recorded, but direct remote hash comparison from this Codex session was blocked by SSH auth.
+- Local hashes are recorded.
+- Server-side file times are now confirmed for `toponly`, but direct local-vs-server SHA comparison is still not recorded.
 
 ## Recommendation
 
