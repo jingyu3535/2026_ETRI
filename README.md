@@ -12,13 +12,27 @@ This repository is the code release for the paper experiments built on LeRobot w
 - Excluded: upstream docs/examples/tests/CI and temporary backup files
 
 ## 1) Environment
-Fill these with exact values used in the paper.
+This work used a split pipeline:
+- Local robot host for data collection/inference with two SO101 arms (`leader`, `follower`)
+- Remote server for model training and cross-attention dump analysis
 
+### Local robot host (collection/inference)
+- Hardware: `SO101 leader + SO101 follower`
+- OS: `TODO`
+- Python: `TODO`
+- Notes: robot control and episode recording were executed locally
+
+### Remote training server (training/analysis)
 - OS: `TODO`
 - Python: `TODO`
 - CUDA: `TODO`
 - PyTorch: `TODO`
 - GPU: `TODO`
+- Notes: model training and cross-attention dump were executed on server
+
+### Data transfer
+- Episode data was transferred from local host to server via Termius/SCP workflow.
+- Transfer command/script: `TODO`
 
 ## 2) Installation
 ```bash
@@ -29,25 +43,39 @@ pip install -e ".[smolvla]"
 ```
 
 ## 3) Dataset preparation
-Describe exactly how to obtain/prepare the dataset and include all commands.
+Describe local collection first, then server-side preprocessing.
 
 ```bash
-# TODO: dataset download / collection command(s)
+# [Local host] collect episode data with SO101 leader/follower
+# TODO: local collection command(s)
+
+# [Server] copy uploaded episodes into training dataset path
+# TODO: server-side import/arrange command(s)
+
+# [Server] preprocessing (if used)
 # TODO: preprocessing command(s)
 ```
 
 ## 4) Training
-Use the exact command used for reported results.
+Run on remote server.
 
 ```bash
-# TODO: full train command
+# [Server] full train command used for reported result
+# TODO
 ```
 
 ## 5) Evaluation
-Use the exact checkpoint and evaluation command.
+Use exact checkpoint path. If inference was run on local robot host, separate it from server evaluation.
 
 ```bash
-# TODO: full eval command
+# [Server] offline eval command (if used)
+# TODO
+
+# [Local host] robot-side inference/eval command (if used)
+# TODO
+
+# [Server] cross-attention dump command
+# TODO
 ```
 
 ## 6) Expected results
