@@ -60,6 +60,26 @@ OPENCV_VIDEOIO_PRIORITY_FFMPEG=0 OPENCV_VIDEOIO_PRIORITY_GSTREAMER=0 lerobot-rec
 
 Data was transferred between local and server using SCP/rsync in Termius-based workflow.
 
+Language prompt template used for collection/evaluation:
+- `pick the <object> and put it in the <box> box`
+
+Verified prompts and counts from `/home/etri01/.cache/huggingface/lerobot/etri01/task_box_1050/meta/episodes/chunk-000/*.parquet`:
+- `pick the banana and put it in the transparent box`: `100`
+- `pick the socks and put it in the transparent box`: `100`
+- `pick the strawberry and put it in the transparent box`: `100`
+- `pick the banana and put it in the blue box`: `234`
+- `pick the socks and put it in the blue box`: `250`
+- `pick the strawberry and put it in the blue box`: `266`
+
+Dataset composition summary:
+- Transparent-box episodes: `300` (`100` per object)
+- Blue-box episodes in final `task_box_1050`: `750` (`234/250/266` by banana/socks/strawberry)
+- Intermediate `750` setting used during development: `300 + 450` where the additional blue split is `134/150/166` (banana/socks/strawberry)
+
+Why transparent -> blue:
+- Practical observation during early inference was unstable target-box recognition on transparent container, so later collection used blue box for stronger visual contrast.
+- This reason is observation-based; no separate quantitative ablation log is currently archived.
+
 ## 4) Training runs used in paper
 Primary reported run:
 - `smolVLA_task_box_1050` (main run)

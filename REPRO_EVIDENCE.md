@@ -123,6 +123,26 @@ This file tracks evidence used to avoid memory-only documentation.
   - `smolVLA_task_box_1050`: `4afe252ce4416ed3a63d41e8f746466f20808748b22e13b605f4f0f47c3ae198`
   - `smolVLA_task_box_1050_toponly`: `a7fddcae36ba6311657534244f7bb8af025817e8a65dbf42404d2cad9792676e`
 
+13. Language prompt distribution in `task_box_1050` dataset
+- Source files:
+  - `/home/etri01/.cache/huggingface/lerobot/etri01/task_box_1050/meta/episodes/chunk-000/file-*.parquet`
+  - Parsed via local Python (`pyarrow`) on `2026-03-05`
+- Values:
+  - `pick the banana and put it in the transparent box`: `100`
+  - `pick the socks and put it in the transparent box`: `100`
+  - `pick the strawberry and put it in the transparent box`: `100`
+  - `pick the banana and put it in the blue box`: `234`
+  - `pick the socks and put it in the blue box`: `250`
+  - `pick the strawberry and put it in the blue box`: `266`
+  - total episodes: `1050`
+
+14. Intermediate 750-setting decomposition used in documentation
+- Source: derived from item 13 counts plus user-provided experiment note
+- Values:
+  - transparent stage: `300` (`100` each object)
+  - additional blue stage: `450` (`134/150/166`)
+- Note: this is a derived breakdown for narrative consistency (`300 + 450 = 750`), while final `task_box_1050` blue totals are `234/250/266`.
+
 ## Partial / needs confirmation
 
 1. Remote server exact package lock state at training time
