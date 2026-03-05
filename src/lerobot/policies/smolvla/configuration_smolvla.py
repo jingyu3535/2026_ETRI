@@ -68,6 +68,18 @@ class SmolVLAConfig(PreTrainedConfig):
     # Attention utils
     use_cache: bool = True
 
+    # Action-attention capture (for visualization/debugging)
+    dump_action_attn: bool = False
+    dump_action_attn_layers: list[int] = field(default_factory=lambda: [15])
+    dump_action_attn_action_step: int = 0
+    dump_action_attn_last_denoise_only: bool = True
+    # If set, capture attention at a specific denoise step (0-based).
+    # Use -1 to capture the last step. When set, overrides dump_action_attn_last_denoise_only.
+    dump_action_attn_denoise_step: int | None = None
+    # Optional: capture language-to-image attention (VLM self-attn) at selected layers.
+    dump_lang_attn: bool = False
+    dump_lang_attn_layers: list[int] = field(default_factory=lambda: [15])
+
     # Finetuning settings
     freeze_vision_encoder: bool = True
     train_expert_only: bool = True

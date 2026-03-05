@@ -866,6 +866,12 @@ def _copy_and_reindex_episodes_metadata(
                             elif isinstance(value, np.ndarray) and value.shape == (3,):
                                 value = value.reshape(3, 1, 1)
 
+                    # Normalize scalar stats into 1D arrays for aggregation.
+                    if not isinstance(value, np.ndarray):
+                        value = np.array([value])
+                    elif value.ndim == 0:
+                        value = np.array([value.item()])
+
                     episode_stats[feature_name][stat_name] = value
 
         all_stats.append(episode_stats)

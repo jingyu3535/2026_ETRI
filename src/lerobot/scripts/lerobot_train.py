@@ -15,6 +15,7 @@
 # limitations under the License.
 import dataclasses
 import logging
+import os
 import time
 from contextlib import nullcontext
 from pprint import pformat
@@ -482,6 +483,13 @@ def train(cfg: TrainPipelineConfig, accelerator: Accelerator | None = None):
     for _ in range(step, cfg.steps):
         start_time = time.perf_counter()
         batch = next(dl_iter)
+        if os.getenv("LEROBOT_DEBUG_TASK_BATCH") == "1":
+            try:
+                task_val = batch.get("task")
+                task_index_val = batch.get("task_index")
+                logging.info("debug task: task=%s task_index=%s", task_val, task_index_val)
+            except Exception as exc:
+                logging.warning("debug task: failed to inspect batch: %s", exc)
         batch = preprocessor(batch)
         train_tracker.dataloading_s = time.perf_counter() - start_time
 

@@ -78,7 +78,7 @@ class SmolVLMWithExpertModel(nn.Module):
             self.vlm = AutoModelForImageTextToText.from_pretrained(
                 model_id,
                 device_map=device,
-                torch_dtype="bfloat16",
+                torch_dtype="float16",
                 low_cpu_mem_usage=True,
             )
             config = self.vlm.config
@@ -106,6 +106,25 @@ class SmolVLMWithExpertModel(nn.Module):
 
         self.num_expert_layers = len(self.lm_expert.layers)
         self.self_attn_every_n_layers = self_attn_every_n_layers
+        # Action-attention capture state (for visualization)
+        self._capture_action_attn = False
+        self._capture_layers: set[int] = set()
+        self._capture_action_step: int = 0
+        self._capture_buffer: dict[int, torch.Tensor] = {}
+        # Language-to-image attention capture (VLM self-attn)
+        self._capture_lang_attn = False
+        self._capture_lang_layers: set[int] = set()
+        self._capture_lang_query_range: tuple[int, int] | None = None
+        self._capture_lang_key_range: tuple[int, int] | None = None
+        self._capture_lang_buffer: dict[int, torch.Tensor] = {}
+        self._capture_is_expert = False
+        self._capture_layer_idx: int | None = None
+        if torch.cuda.is_available():
+            major, _ = torch.cuda.get_device_capability()
+            # Pre-Ampere GPUs (e.g., Titan X) do not support BF16.
+            if major < 8:
+                self.vlm = self.vlm.to(dtype=torch.float16)
+                self.lm_expert = self.lm_expert.to(dtype=torch.float16)
         if "cross" in attention_mode:
             # Reshape qkv projections to have the same input dimension as the vlm
             for layer_idx in range(len(self.lm_expert.layers)):
@@ -121,6 +140,7 @@ class SmolVLMWithExpertModel(nn.Module):
                     lm_expert_config.num_key_value_heads * lm_expert_config.head_dim,
                     bias=lm_expert_config.attention_bias,
                 )
+
         # Remove unused embed_tokens
         self.lm_expert.embed_tokens = None
 
@@ -132,6 +152,37 @@ class SmolVLMWithExpertModel(nn.Module):
         self.attention_mode = attention_mode
         self.expert_hidden_size = lm_expert_config.hidden_size
         self.set_requires_grad()
+
+    def set_action_attn_capture(self, enabled: bool, layers: list[int] | None = None, action_step: int = 0):
+        self._capture_action_attn = enabled
+        self._capture_layers = set(layers or [])
+        self._capture_action_step = action_step
+        if enabled:
+            self._capture_buffer = {}
+
+    def pop_action_attn_buffer(self) -> dict[int, torch.Tensor]:
+        buf = self._capture_buffer
+        self._capture_buffer = {}
+        return buf
+
+    def set_lang_attn_capture(
+        self,
+        enabled: bool,
+        layers: list[int] | None = None,
+        query_range: tuple[int, int] | None = None,
+        key_range: tuple[int, int] | None = None,
+    ):
+        self._capture_lang_attn = enabled
+        self._capture_lang_layers = set(layers or [])
+        self._capture_lang_query_range = query_range
+        self._capture_lang_key_range = key_range
+        if enabled:
+            self._capture_lang_buffer = {}
+
+    def pop_lang_attn_buffer(self) -> dict[int, torch.Tensor]:
+        buf = self._capture_lang_buffer
+        self._capture_lang_buffer = {}
+        return buf
 
     def get_vlm_model(self):
         return self.vlm.model
@@ -267,9 +318,13 @@ class SmolVLMWithExpertModel(nn.Module):
 
         attention_interface = self.get_attention_interface()
 
+        # Capture VLM self-attention if enabled.
+        self._capture_is_expert = False
+        self._capture_layer_idx = layer_idx
         att_output = attention_interface(
             attention_mask_, batch_size, head_dim, query_states, key_states, value_states
         )
+        self._capture_layer_idx = None
         return [att_output], past_key_values
 
     def forward_cross_attn_layer(
@@ -314,9 +369,12 @@ class SmolVLMWithExpertModel(nn.Module):
             query_states = apply_rope(query_state, position_id)
             key_states = apply_rope(key_state, position_id)
 
+            self._capture_is_expert = False
+            self._capture_layer_idx = layer_idx
             att_output = attention_interface(
                 prefix_attention_mask, batch_size, head_dim, query_states, key_states, value_states
             )
+            self._capture_layer_idx = None
             att_outputs.append(att_output)
         else:
             expert_position_id = position_ids
@@ -372,6 +430,9 @@ class SmolVLMWithExpertModel(nn.Module):
 
             expert_query_states = apply_rope(expert_query_state, expert_position_id)
 
+            # Capture expert cross-attention if enabled.
+            self._capture_is_expert = True
+            self._capture_layer_idx = layer_idx
             att_output = attention_interface(
                 expert_attention_mask,
                 batch_size,
@@ -380,6 +441,8 @@ class SmolVLMWithExpertModel(nn.Module):
                 expert_key_states,
                 expert_value_states,
             )
+            self._capture_is_expert = False
+            self._capture_layer_idx = None
             att_outputs.append(att_output)
         else:
             att_outputs.append(None)
@@ -540,6 +603,37 @@ class SmolVLMWithExpertModel(nn.Module):
         masked_att_weights = torch.where(attention_mask[:, None, :, :], att_weights, big_neg)
         probs = nn.functional.softmax(masked_att_weights, dim=-1)
         probs = probs.to(dtype=value_states.dtype)
+
+        # Capture action expert cross-attention probabilities (head mean).
+        if (
+            self._capture_action_attn
+            and self._capture_is_expert
+            and self._capture_layer_idx is not None
+            and self._capture_layer_idx in self._capture_layers
+        ):
+            action_step = self._capture_action_step
+            if 0 <= action_step < probs.shape[2]:
+                # probs: [B, H, Q, K] -> take action_step row
+                action_probs = probs[:, :, action_step, :]  # [B, H, K]
+                action_probs = action_probs.mean(dim=1)  # [B, K]
+                # Store first batch only (inference is batch=1)
+                self._capture_buffer[self._capture_layer_idx] = action_probs.detach().to(torch.float32)
+
+        # Capture language-to-image attention (VLM self-attn).
+        if (
+            self._capture_lang_attn
+            and (not self._capture_is_expert)
+            and self._capture_layer_idx is not None
+            and self._capture_layer_idx in self._capture_lang_layers
+            and self._capture_lang_query_range is not None
+            and self._capture_lang_key_range is not None
+        ):
+            q0, q1 = self._capture_lang_query_range
+            k0, k1 = self._capture_lang_key_range
+            if q0 < q1 and k0 < k1 and q1 <= probs.shape[2] and k1 <= probs.shape[3]:
+                lang_probs = probs[:, :, q0:q1, k0:k1]  # [B, H, Q_lang, K_img]
+                lang_probs = lang_probs.mean(dim=1)  # [B, Q_lang, K_img]
+                self._capture_lang_buffer[self._capture_layer_idx] = lang_probs[0].detach().to(torch.float32)
 
         att_output = torch.matmul(probs, value_states.permute(0, 2, 1, 3))
 

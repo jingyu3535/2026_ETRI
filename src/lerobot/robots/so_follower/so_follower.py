@@ -62,6 +62,11 @@ class SOFollower(Robot):
             calibration=self.calibration,
         )
         self.cameras = make_cameras_from_configs(config.cameras)
+        # USB cameras can briefly disappear/re-enumerate, so keep connection/read resilient.
+        self.camera_connect_attempts = 8
+        self.camera_reconnect_attempts = 8
+        self.camera_retry_sleep_s = 0.5
+        self.camera_timeout_ms = 1000
 
     @property
     def _motors_ft(self) -> dict[str, type]:
@@ -100,8 +105,27 @@ class SOFollower(Robot):
             )
             self.calibrate()
 
-        for cam in self.cameras.values():
-            cam.connect()
+        for cam_key, cam in self.cameras.items():
+            last_error: Exception | None = None
+            for attempt in range(1, self.camera_connect_attempts + 1):
+                try:
+                    cam.connect(warmup=False)
+                    cam.read()
+                    last_error = None
+                    break
+                except Exception as e:
+                    last_error = e
+                    logger.warning(
+                        f"{self} failed to connect {cam_key} (attempt {attempt}/{self.camera_connect_attempts}): {e}"
+                    )
+                    if cam.is_connected:
+                        try:
+                            cam.disconnect()
+                        except Exception:
+                            pass
+                    time.sleep(self.camera_retry_sleep_s)
+            if last_error is not None:
+                raise last_error
 
         self.configure()
         logger.info(f"{self} connected.")
@@ -189,10 +213,31 @@ class SOFollower(Robot):
 
         # Capture images from cameras
         for cam_key, cam in self.cameras.items():
-            start = time.perf_counter()
-            obs_dict[cam_key] = cam.async_read()
-            dt_ms = (time.perf_counter() - start) * 1e3
-            logger.debug(f"{self} read {cam_key}: {dt_ms:.1f}ms")
+            last_error: Exception | None = None
+            for attempt in range(1, self.camera_reconnect_attempts + 1):
+                try:
+                    if not cam.is_connected:
+                        cam.connect(warmup=False)
+                    start = time.perf_counter()
+                    obs_dict[cam_key] = cam.async_read(timeout_ms=self.camera_timeout_ms)
+                    dt_ms = (time.perf_counter() - start) * 1e3
+                    logger.debug(f"{self} read {cam_key}: {dt_ms:.1f}ms")
+                    last_error = None
+                    break
+                except Exception as e:
+                    last_error = e
+                    logger.warning(
+                        f"{self} reconnecting {cam_key} (attempt {attempt}/{self.camera_reconnect_attempts})"
+                    )
+                    try:
+                        if cam.is_connected:
+                            cam.disconnect()
+                    except Exception:
+                        pass
+                    time.sleep(self.camera_retry_sleep_s)
+
+            if last_error is not None:
+                raise last_error
 
         return obs_dict
 

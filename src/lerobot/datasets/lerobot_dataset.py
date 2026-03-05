@@ -401,13 +401,25 @@ class LeRobotDatasetMetadata:
         episode_stats: dict[str, dict],
         episode_metadata: dict,
     ) -> None:
+        episode_stats_for_meta = {key: dict(stats) for key, stats in episode_stats.items()}
+        task_stats = episode_stats_for_meta.get("task_index")
+        if task_stats is not None:
+            # Keep task_index stats scalar in episode metadata to preserve schema across resumes.
+            for stat_key, stat_value in list(task_stats.items()):
+                if isinstance(stat_value, np.ndarray):
+                    if stat_value.size == 1:
+                        task_stats[stat_key] = float(stat_value.reshape(-1)[0])
+                elif isinstance(stat_value, list) and len(stat_value) == 1:
+                    task_stats[stat_key] = float(stat_value[0])
+            episode_stats_for_meta["task_index"] = task_stats
+
         episode_dict = {
             "episode_index": episode_index,
             "tasks": episode_tasks,
             "length": episode_length,
         }
         episode_dict.update(episode_metadata)
-        episode_dict.update(flatten_dict({"stats": episode_stats}))
+        episode_dict.update(flatten_dict({"stats": episode_stats_for_meta}))
         self._save_episode_metadata(episode_dict)
 
         # Update info

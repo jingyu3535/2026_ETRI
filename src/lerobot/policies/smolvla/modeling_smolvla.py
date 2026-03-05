@@ -320,6 +320,43 @@ class SmolVLAPolicy(PreTrainedPolicy):
         return actions
 
     @torch.no_grad()
+    def predict_action_chunk_with_attn(
+        self, batch: dict[str, Tensor], noise: Tensor | None = None, **kwargs: Unpack[ActionSelectKwargs]
+    ) -> tuple[Tensor, dict[int, Tensor], dict]:
+        """Predict action chunk and return action-attention buffer + meta for visualization."""
+        self.eval()
+        batch = self._prepare_batch(batch)
+        self._queues = populate_queues(self._queues, batch, exclude_keys=[ACTION])
+
+        present_img_keys = [key for key in self.config.image_features if key in batch]
+
+        images, img_masks = self.prepare_images(batch)
+        state = self.prepare_state(batch)
+        lang_tokens = batch[f"{OBS_LANGUAGE_TOKENS}"]
+        lang_masks = batch[f"{OBS_LANGUAGE_ATTENTION_MASK}"]
+
+        actions, attn_buffer, meta = self.model.sample_actions(
+            images,
+            img_masks,
+            lang_tokens,
+            lang_masks,
+            state,
+            noise=noise,
+            return_attn=True,
+            camera_keys=present_img_keys,
+            **kwargs,
+        )
+
+        # Unpad actions
+        original_action_dim = self.config.action_feature.shape[0]
+        actions = actions[:, :, :original_action_dim]
+
+        if self.config.adapt_to_pi_aloha:
+            actions = self._pi_aloha_encode_actions(actions)
+
+        return actions, attn_buffer, meta
+
+    @torch.no_grad()
     def select_action(
         self, batch: dict[str, Tensor], noise: Tensor | None = None, **kwargs: Unpack[ActionSelectKwargs]
     ) -> Tensor:
@@ -595,18 +632,24 @@ class VLAFlowMatching(nn.Module):
         return time
 
     def embed_prefix(
-        self, images, img_masks, lang_tokens, lang_masks, state: torch.Tensor = None
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self,
+        images,
+        img_masks,
+        lang_tokens,
+        lang_masks,
+        state: torch.Tensor = None,
+        return_meta: bool = False,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor] | tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict]:
         """Embed images with SigLIP and language tokens with embedding layer to prepare
         for SmolVLM transformer processing.
         """
         embs = []
         pad_masks = []
         att_masks = []
-        for _img_idx, (
-            img,
-            img_mask,
-        ) in enumerate(zip(images, img_masks, strict=False)):
+        img_token_lens: list[int] = []
+        img_spans: list[tuple[int, int]] = []
+        cursor = 0
+        for _img_idx, (img, img_mask) in enumerate(zip(images, img_masks, strict=False)):
             if self.add_image_special_tokens:
                 image_start_token = (
                     self.vlm_with_expert.embed_language_tokens(
@@ -621,6 +664,7 @@ class VLAFlowMatching(nn.Module):
                 att_masks += [0] * (image_start_mask.shape[-1])
                 embs.append(image_start_token)
                 pad_masks.append(image_start_mask)
+                cursor += image_start_mask.shape[-1]
 
             img_emb = self.vlm_with_expert.embed_image(img)
             img_emb = img_emb
@@ -631,6 +675,10 @@ class VLAFlowMatching(nn.Module):
 
             bsize, num_img_embs = img_emb.shape[:2]
             img_mask = img_mask[:, None].expand(bsize, num_img_embs)
+
+            img_token_lens.append(num_img_embs)
+            img_spans.append((cursor, cursor + num_img_embs))
+            cursor += num_img_embs
 
             embs.append(img_emb)
             pad_masks.append(img_mask)
@@ -650,6 +698,7 @@ class VLAFlowMatching(nn.Module):
                 embs.append(image_end_token)
                 pad_masks.append(image_end_mask)
                 att_masks += [0] * (image_end_mask.shape[1])
+                cursor += image_end_mask.shape[1]
         lang_emb = self.vlm_with_expert.embed_language_tokens(lang_tokens)
         # Normalize language embeddings
         lang_emb_dim = lang_emb.shape[-1]
@@ -659,6 +708,8 @@ class VLAFlowMatching(nn.Module):
         pad_masks.append(lang_masks)
 
         num_lang_embs = lang_emb.shape[1]
+        lang_range = (cursor, cursor + num_lang_embs)
+        cursor += num_lang_embs
         att_masks += [0] * num_lang_embs
 
         state_emb = self.state_proj(state)
@@ -668,6 +719,8 @@ class VLAFlowMatching(nn.Module):
         device = state_emb.device
 
         states_seq_len = state_emb.shape[1]
+        state_range = (cursor, cursor + states_seq_len)
+        cursor += states_seq_len
         state_mask = torch.ones(bsize, states_seq_len, dtype=torch.bool, device=device)
         pad_masks.append(state_mask)
 
@@ -686,6 +739,14 @@ class VLAFlowMatching(nn.Module):
 
         att_masks = att_masks.expand(bsize, -1)
 
+        if return_meta:
+            meta = {
+                "img_token_lens": img_token_lens,
+                "img_spans": img_spans,
+                "lang_range": lang_range,
+                "state_range": state_range,
+            }
+            return embs, pad_masks, att_masks, meta
         return embs, pad_masks, att_masks
 
     def embed_suffix(self, noisy_actions, timestep):
@@ -777,6 +838,8 @@ class VLAFlowMatching(nn.Module):
         lang_masks,
         state,
         noise=None,
+        return_attn: bool = False,
+        camera_keys: list[str] | None = None,
         **kwargs: Unpack[ActionSelectKwargs],
     ) -> Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
@@ -787,11 +850,32 @@ class VLAFlowMatching(nn.Module):
             actions_shape = (bsize, self.config.chunk_size, self.config.max_action_dim)
             noise = self.sample_noise(actions_shape, device)
 
-        prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(
-            images, img_masks, lang_tokens, lang_masks, state=state
-        )
+        if return_attn:
+            prefix_embs, prefix_pad_masks, prefix_att_masks, prefix_meta = self.embed_prefix(
+                images, img_masks, lang_tokens, lang_masks, state=state, return_meta=True
+            )
+        else:
+            prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(
+                images, img_masks, lang_tokens, lang_masks, state=state
+            )
         prefix_att_2d_masks = make_att_2d_masks(prefix_pad_masks, prefix_att_masks)
         prefix_position_ids = torch.cumsum(prefix_pad_masks, dim=1) - 1
+        # Optional: capture language-to-image attention during prefix pass.
+        if return_attn and self.config.dump_lang_attn:
+            img_spans = prefix_meta["img_spans"]
+            lang_range = prefix_meta["lang_range"]
+            if img_spans and lang_range is not None:
+                img_start = img_spans[0][0]
+                img_end = img_spans[-1][1]
+                self.vlm_with_expert.set_lang_attn_capture(
+                    True,
+                    layers=self.config.dump_lang_attn_layers,
+                    query_range=lang_range,
+                    key_range=(img_start, img_end),
+                )
+        else:
+            self.vlm_with_expert.set_lang_attn_capture(False)
+
         # Compute image and language key value cache
         _, past_key_values = self.vlm_with_expert.forward(
             attention_mask=prefix_att_2d_masks,
@@ -801,10 +885,15 @@ class VLAFlowMatching(nn.Module):
             use_cache=self.config.use_cache,
             fill_kv_cache=True,
         )
+        if return_attn and self.config.dump_lang_attn:
+            lang_attn_buffer = self.vlm_with_expert.pop_lang_attn_buffer()
+        else:
+            lang_attn_buffer = {}
         num_steps = self.config.num_steps
         dt = -1.0 / num_steps
 
         x_t = noise
+        attn_buffer: dict[int, torch.Tensor] = {}
         for step in range(num_steps):
             time = 1.0 + step * dt
             time_tensor = torch.tensor(time, dtype=torch.float32, device=device).expand(bsize)
@@ -816,6 +905,27 @@ class VLAFlowMatching(nn.Module):
                     past_key_values=past_key_values,
                     timestep=current_timestep,
                 )
+
+            if self.config.dump_action_attn_denoise_step is not None:
+                target_step = self.config.dump_action_attn_denoise_step
+                if target_step == -1:
+                    target_step = num_steps - 1
+                capture_enabled = return_attn and self.config.dump_action_attn and (step == target_step)
+            else:
+                capture_enabled = (
+                    return_attn
+                    and self.config.dump_action_attn
+                    and (
+                        (not self.config.dump_action_attn_last_denoise_only)
+                        or (step == num_steps - 1)
+                    )
+                )
+            if capture_enabled:
+                self.vlm_with_expert.set_action_attn_capture(
+                    True, layers=self.config.dump_action_attn_layers, action_step=self.config.dump_action_attn_action_step
+                )
+            else:
+                self.vlm_with_expert.set_action_attn_capture(False)
 
             if self._rtc_enabled():
                 inference_delay = kwargs.get("inference_delay")
@@ -835,10 +945,40 @@ class VLAFlowMatching(nn.Module):
 
             x_t = x_t + dt * v_t
 
+            if capture_enabled:
+                attn_buffer = self.vlm_with_expert.pop_action_attn_buffer()
+
             if self.rtc_processor is not None and self.rtc_processor.is_debug_enabled():
                 self.rtc_processor.track(time=time, x_t=x_t, v_t=v_t)
 
-        return x_t
+        if not return_attn:
+            return x_t
+
+        # Build attention meta for visualization
+        img_spans = prefix_meta["img_spans"]
+        img_token_lens = prefix_meta["img_token_lens"]
+        lang_range = prefix_meta["lang_range"]
+        state_range = prefix_meta["state_range"]
+
+        img_grids = []
+        for n in img_token_lens:
+            g = int(math.sqrt(n))
+            if g * g == n:
+                img_grids.append((g, g))
+            else:
+                img_grids.append((1, n))
+
+        meta = {
+            "img_spans": img_spans,
+            "img_token_lens": img_token_lens,
+            "img_grids": img_grids,
+            "lang_range": lang_range,
+            "state_range": state_range,
+            "camera_keys": camera_keys or [],
+        }
+        meta["lang_tokens"] = lang_tokens.detach().cpu()
+        meta["lang_mask"] = lang_masks.detach().cpu()
+        return x_t, {"action": attn_buffer, "lang": lang_attn_buffer}, meta
 
     def denoise_step(
         self,
