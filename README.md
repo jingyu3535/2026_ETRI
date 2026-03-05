@@ -31,11 +31,28 @@ This work used a split pipeline:
 - GPU: `NVIDIA H200 NVL` (143771 MiB, driver `570.195.03`)
 
 ## 2) Installation
+We follow the official LeRobot installation guide:
+- https://huggingface.co/docs/lerobot/installation
+
+For paper reproduction, use the exact environment style below.
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
+# 1) Conda env (Python 3.10)
+conda create -y -n lerobot python=3.10
+conda activate lerobot
+conda install -y -c conda-forge ffmpeg
+
+# 2) Clone and pin base code
+git clone https://github.com/huggingface/lerobot.git
+cd lerobot
+git checkout 15724826
+
+# 3) Install dependencies for this project
+# Training/analysis:
 pip install -e ".[smolvla]"
+
+# Local SO101 robot control (Feetech motors):
+pip install -e ".[smolvla,feetech]"
 ```
 
 ## 3) Dataset collection and transfer
