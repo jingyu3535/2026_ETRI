@@ -366,40 +366,11 @@ Label-tool hotkeys:
 - `n`: save empty mask and move next
 - `q`: quit
 
-3. Add extra "first object appears" seeds for camera1 episodes with empty first seed
+3. Optional correction for empty first-seed masks
+- For episodes where the first seed mask is empty but the object appears later, add one extra seed frame near first object appearance and label it manually.
+- Extra seed frames are stored under `/home/etri01/model/eval_task_box_1050/seg_seed_frames/camera1_extra_first_object` and merged into the existing camera1 seed-mask directory.
+
 ```bash
-/home/etri01/miniforge3/envs/lerobot/bin/python - <<'PY'
-from pathlib import Path
-import shutil
-
-root = Path("/home/etri01/model/eval_task_box_1050")
-src_root = root / "frames_by_ep" / "camera1"
-dst_root = root / "seg_seed_frames" / "camera1_extra_first_object"
-dst_root.mkdir(parents=True, exist_ok=True)
-
-targets = {
-    0: [52],
-    7: [186, 187],
-    9: [207],
-    11: [188],
-    13: [169],
-    14: [215, 216],
-    15: [143, 144],
-    16: [187],
-    17: [399],
-}
-for ep, nums in targets.items():
-    epn = f"ep{ep:03d}"
-    for num in nums:
-        src = src_root / epn / f"frame_{num:05d}.png"
-        if not src.exists():
-            print("[missing]", src)
-            continue
-        dst = dst_root / f"{epn}_frame_{num:05d}.png"
-        shutil.copy2(src, dst)
-        print("[copied]", dst.name)
-PY
-
 PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   /home/etri01/projects/lerobot/scripts/seg_label_tool.py \
   --input_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames/camera1_extra_first_object \
