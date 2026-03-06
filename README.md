@@ -218,8 +218,25 @@ Reasoning summary:
 - `policy.push_to_hub=false` avoids HF auth/push failures while preserving local checkpoints.
 
 ## 6) Evaluation and attention dump
+Evaluation protocol used for analysis:
+- Evaluated checkpoints: `smolVLA_task_box_750`, `smolVLA_task_box_1050`, `smolVLA_task_box_1050_toponly`
+- Robot-side on-policy evaluation data: `12` episodes per checkpoint, `36` episodes total
+- Object placement layouts: two versions (`6` episodes + `6` episodes) per checkpoint
+
+Checkpoint list for evaluation:
+
+| Run | checkpoint path |
+| --- | --- |
+| `smolVLA_task_box_750` | `/home/etri01/model/smolVLA_task_box_750/checkpoints/500000/pretrained_model` |
+| `smolVLA_task_box_1050` | `/home/etri01/model/smolVLA_task_box_1050/checkpoints/500000/pretrained_model` |
+| `smolVLA_task_box_1050_toponly` | `/home/etri01/model/smolVLA_task_box_1050_toponly/checkpoints/500000/pretrained_model` |
+
 ```bash
-# [Local host] robot-side inference/evaluation example
+# [Local host] robot-side on-policy evaluation template (run once per checkpoint)
+# Set these per run:
+RUN_TAG=smolVLA_task_box_1050
+CKPT=/home/etri01/model/${RUN_TAG}/checkpoints/500000/pretrained_model
+
 lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
@@ -230,25 +247,25 @@ lerobot-record \
   --teleop.id=my_leader \
   --display_data=true \
   --dataset.single_task="pick the strawberry and put it in the blue box" \
-  --dataset.repo_id=etri01/eval_task_box_1050_cam2only \
-  --dataset.root=/home/etri01/model/eval_task_box_1050_cam2only \
+  --dataset.repo_id=etri01/eval_${RUN_TAG}_12ep \
+  --dataset.root=/home/etri01/model/eval_${RUN_TAG}_12ep \
   --dataset.push_to_hub=false \
   --dataset.episode_time_s=40 \
   --dataset.reset_time_s=10 \
-  --dataset.num_episodes=4 \
+  --dataset.num_episodes=12 \
   --resume=false \
   --policy.type=smolvla \
-  --policy.pretrained_path=/home/etri01/model/smolVLA_task_box_1050/checkpoints/500000/pretrained_model
+  --policy.pretrained_path=${CKPT}
 
-# [Server] attention dump example
+# [Server] attention dump example (single run with 12 episodes)
 PYTHONPATH=/home/internship/projects/lerobot/src \
   /home/internship/miniforge3/envs/lerobot/bin/python \
   /home/internship/projects/lerobot/scripts/dump_action_attn_eval.py \
-  --dataset_root /home/internship/model/eval_task_box_750_0202 \
-  --dataset_repo_id etri01/eval_task_box_750_0202 \
-  --checkpoint /home/internship/model/smolVLA_task_box_750/checkpoints/500000/pretrained_model \
-  --dump_dir /home/internship/model/eval_task_box_750_0202/action_attn_dump_img_0211/_raw_tuned \
-  --episodes 0-35 \
+  --dataset_root /home/internship/model/eval_${RUN_TAG}_12ep \
+  --dataset_repo_id etri01/eval_${RUN_TAG}_12ep \
+  --checkpoint /home/internship/model/${RUN_TAG}/checkpoints/500000/pretrained_model \
+  --dump_dir /home/internship/model/eval_${RUN_TAG}_12ep/action_attn_dump_img \
+  --episodes 0-11 \
   --layers 1,5,9,13,15 \
   --denoise_steps 0,5,9 \
   --action_step all \
@@ -256,10 +273,13 @@ PYTHONPATH=/home/internship/projects/lerobot/src \
   --stride 1 \
   --log_every 50 \
   --log_time
+
+# If all three runs are merged into one eval dataset (36 episodes total), use:
+# --episodes 0-35
 ```
 
 ## 7) Expected results
-Main run (`task_box_1050`) runtime summary:
+Runtime summary example (`task_box_1050` log):
 - `cfg.steps=500000`
 - `dataset.num_frames=421143`
 - `dataset.num_episodes=1050`
