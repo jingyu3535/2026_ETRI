@@ -165,26 +165,54 @@ Run timeline (known dates):
 - `smolVLA_task_box_1050` (main): training log starts on `2026-02-13`, with `020000` checkpoint at `2026-02-13` and `500000` at `2026-02-15`.
 - `smolVLA_task_box_1050_toponly`: server checkpoint timestamps show `020000` at `2026-02-25` and `500000` at `2026-02-27`.
 
-Main run command:
+500k training command template:
 ```bash
 cd /home/internship/projects/lerobot
 conda activate lerobot
 lerobot-train \
   --policy.path=lerobot/smolvla_base \
-  --dataset.repo_id=task_box_1050 \
-  --dataset.root=/home/internship/data/etri01/task_box_1050 \
-  --policy.repo_id=internship/temp_model_1050 \
+  --dataset.repo_id=<DATASET_REPO_ID> \
+  --dataset.root=<DATASET_ROOT> \
+  --policy.repo_id=<POLICY_REPO_ID> \
   --batch_size=32 \
   --steps=500000 \
-  --output_dir=/home/internship/model/smolVLA_task_box_1050 \
+  --output_dir=<OUTPUT_DIR> \
   --policy.device=cuda \
   --wandb.enable=false \
   --dataset.video_backend=pyav \
-  --rename_map='{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}' \
+  --rename_map='<RENAME_MAP_JSON>' \
   --policy.optimizer_lr=5e-5 \
   --policy.scheduler_warmup_steps=15000 \
-  --policy.scheduler_decay_steps=500000
+  --policy.scheduler_decay_steps=500000 \
+  --policy.push_to_hub=false
 ```
+
+Run-specific values:
+
+| Run | dataset.repo_id | dataset.root | policy.repo_id | output_dir | rename_map |
+| --- | --- | --- | --- | --- | --- |
+| `smolVLA_task_box_750` | `task_box_100` | `/home/internship/data/etri01/task_box_100` | `internship/temp_model_750` | `/home/internship/model/smolVLA_task_box_750` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
+| `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `internship/temp_model_1050` | `/home/internship/model/smolVLA_task_box_1050` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
+| `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `internship/temp_model_1050_toponly` | `/home/internship/model/smolVLA_task_box_1050_toponly` | `{"observation.images.top":"observation.images.camera1"}` |
+
+Training changes vs defaults (for 500k runs):
+
+| Item | Default | Used |
+| --- | --- | --- |
+| `batch_size` | `8` | `32` |
+| `steps` | `100000` | `500000` |
+| `policy.optimizer_lr` | `1e-4` | `5e-5` |
+| `policy.scheduler_warmup_steps` | `1000` | `15000` |
+| `policy.scheduler_decay_steps` | `30000` | `500000` |
+| `rename_map` | empty | set per run |
+
+Reasoning summary:
+- Lower `lr` and longer `warmup` were used to stabilize long-horizon fine-tuning.
+- `scheduler_decay_steps=500000` keeps effective learning updates through late training instead of early decay saturation.
+- `batch_size=32` improves update stability and throughput under available GPU memory.
+- `steps=500000` was used for longer optimization than the 100k default.
+- `rename_map` is required because dataset image keys (`front/top`) are mapped to policy keys (`camera1/2`).
+- `policy.push_to_hub=false` avoids HF auth/push failures while preserving local checkpoints.
 
 ## 6) Evaluation and attention dump
 ```bash

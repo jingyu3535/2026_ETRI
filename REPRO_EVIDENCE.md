@@ -187,6 +187,23 @@ This file tracks evidence used to avoid memory-only documentation.
   - The command evolved during development.
   - README uses a canonical late-stage collection command (stable `/dev/v4l/by-id` paths) plus explicit variant notes.
 
+18. Training default-vs-used hyperparameter evidence
+- Default-value sources:
+  - `/home/etri01/projects/lerobot/src/lerobot/configs/train.py:55` (`batch_size=8`)
+  - `/home/etri01/projects/lerobot/src/lerobot/configs/train.py:56` (`steps=100000`)
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/configuration_smolvla.py:89` (`optimizer_lr=1e-4`)
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/configuration_smolvla.py:95` (`scheduler_warmup_steps=1000`)
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/configuration_smolvla.py:96` (`scheduler_decay_steps=30000`)
+- Used-value sources:
+  - `500000` run `train_config.json` files for `smolVLA_task_box_750`, `smolVLA_task_box_1050`, `smolVLA_task_box_1050_toponly`
+  - user-provided train command blocks (`lerobot-train ... --batch_size=32 --steps=500000 --policy.optimizer_lr=5e-5 --policy.scheduler_warmup_steps=15000 --policy.scheduler_decay_steps=500000`)
+- Used values (common across runs):
+  - `batch_size=32`, `steps=500000`
+  - `policy.optimizer_lr=5e-5`
+  - `policy.scheduler_warmup_steps=15000`
+  - `policy.scheduler_decay_steps=500000`
+  - `rename_map` explicitly set per run (`front/top -> camera1/camera2` or `top -> camera1`)
+
 ## Partial / needs confirmation
 
 1. Remote server exact package lock state at training time
