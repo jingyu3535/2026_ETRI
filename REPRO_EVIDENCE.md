@@ -240,7 +240,7 @@ This file tracks evidence used to avoid memory-only documentation.
 - Pipeline summary recorded in README:
   - Dataset root: `/home/etri01/model/eval_task_box_1050`
   - Camera convention (analysis labels): `camera1=front`, `camera2=top`
-  - Note: physical device/vendor mapping for `front/top` is host-dependent and may swap across sessions
+  - Camera device mapping used in this repo: `front(camera1)=Innomaker`, `top(camera2)=Sonix`
   - Seeding: 5-bin frame sampling per episode + extra first-object seeds for selected camera1 episodes
   - SAM2 inference: `sam2.1_hiera_l.yaml` + `sam2.1_hiera_large.pt`, `fill_before_prompt`, `out_index_base=1`
   - QA: overlay generation and frame/mask filename-set equality check

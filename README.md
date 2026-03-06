@@ -93,18 +93,12 @@ Canonical collection command (blue-box stage):
 export OPENCV_VIDEOIO_PRIORITY_FFMPEG=0
 export OPENCV_VIDEOIO_PRIORITY_GSTREAMER=0
 
-# Verify and set camera-device mapping for this machine/session.
-# Example check:
-# ls -l /dev/v4l/by-id
-FRONT_CAM_PATH=<FRONT_CAM_PATH>
-TOP_CAM_PATH=<TOP_CAM_PATH>
-
 # SO101 teleoperation recording
 lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
   --robot.id=my_follower \
-  --robot.cameras="{ front: {type: opencv, index_or_path: '${FRONT_CAM_PATH}', width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: '${TOP_CAM_PATH}', width: 640, height: 480, fps: 30}}" \
+  --robot.cameras="{ front: {type: opencv, index_or_path: '/dev/v4l/by-id/usb-Innomaker_Innomaker-U20CAM-720P_SN0001-video-index0', width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: '/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN0001-video-index0', width: 640, height: 480, fps: 30}}" \
   --teleop.type=so101_leader \
   --teleop.port=/dev/ttyACM0 \
   --teleop.id=my_leader \
@@ -242,14 +236,12 @@ Checkpoint list for evaluation:
 # Set these per run:
 RUN_TAG=smolVLA_task_box_1050
 CKPT=/home/etri01/model/${RUN_TAG}/checkpoints/500000/pretrained_model
-FRONT_CAM_PATH=<FRONT_CAM_PATH>
-TOP_CAM_PATH=<TOP_CAM_PATH>
 
 lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
   --robot.id=my_follower \
-  --robot.cameras="{ front: {type: opencv, index_or_path: '${FRONT_CAM_PATH}', width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: '${TOP_CAM_PATH}', width: 640, height: 480, fps: 30} }" \
+  --robot.cameras="{ front: {type: opencv, index_or_path: '/dev/v4l/by-id/usb-Innomaker_Innomaker-U20CAM-720P_SN0001-video-index0', width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: '/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN0001-video-index0', width: 640, height: 480, fps: 30} }" \
   --teleop.type=so101_leader \
   --teleop.port=/dev/ttyACM0 \
   --teleop.id=my_leader \
@@ -287,8 +279,7 @@ PYTHONPATH=/home/internship/projects/lerobot/src \
 ```
 
 Camera note:
-- `front/top` are role labels in the command, not fixed hardware-vendor names.
-- Device mapping can differ by host/session; always verify on the robot host before running (`ls -l /dev/v4l/by-id`).
+- This repository hardcodes camera mapping as `front=camera1=Innomaker`, `top=camera2=Sonix` on host `etri01`.
 - Single-camera (`camera2` only) evaluation is a separate diagnostic setting, not the default full evaluation.
 
 Action-to-image cross-attention dump implementation (this fork):
