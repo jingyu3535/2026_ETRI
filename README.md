@@ -121,23 +121,20 @@ Camera naming:
 - Paper text: `wrist-view`, `top-view`
 - Stored keys: `observation.images.front` (wrist-view), `observation.images.top` (top-view)
 
-Episode counts by collection stage:
-- Stage A (transparent): `300` total = banana `100`, socks `100`, strawberry `100`
-- Stage B (blue, add): `+300` = banana `84`, socks `100`, strawberry `116` (cumulative `600`)
-- Stage C (blue, add): `+150` = banana `50`, socks `50`, strawberry `50` (cumulative `750`)
-- Stage D (blue, add): `+300` = banana `100`, socks `100`, strawberry `100` (cumulative `1050`)
+Dataset growth used by analysis models:
+- Initial transparent-box data: `300` = banana `100`, socks `100`, strawberry `100`
+- To build `750`, blue-box data added: `450` = banana `134`, socks `150`, strawberry `166`
+- `750` total = transparent `300` + blue `450`
+- To build `1050`, additional blue-box data added: `300` = banana `100`, socks `100`, strawberry `100`
+- Final `1050` totals = transparent `300` + blue `750` (banana `234`, socks `250`, strawberry `266`)
 
-Final totals:
-- Transparent episodes: `300`
-- Blue episodes: `750` = banana `234`, socks `250`, strawberry `266`
-- Overall: `1050`
+Model-to-dataset mapping:
+- `smolVLA_task_box_750` -> `750` episodes
+- `smolVLA_task_box_1050` -> `1050` episodes
+- `smolVLA_task_box_1050_toponly` -> same `1050` episodes with top-view-only input (`front` removed by `rename_map`)
 
 Transfer (local collection host -> remote training server):
-- Collected episodes were copied from local host (`etri01`) to server (`internship@user`) and placed under `/home/internship/data/etri01/`.
-- Example:
-```bash
-rsync -avhP /home/etri01/<local_dataset_dir>/ internship@<SERVER_IP>:/home/internship/data/etri01/<dataset_name>/
-```
+- Data transfer was performed manually in Termius (SFTP/SCP workflow) from local host (`etri01`) to server (`internship@user`), then placed under `/home/internship/data/etri01/`.
 
 ## 5) Training runs used in paper
 Primary reported run:
