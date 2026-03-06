@@ -137,12 +137,10 @@ Transfer (local collection host -> remote training server):
 - Data transfer was performed manually in Termius (SFTP/SCP workflow) from local host (`etri01`) to server (`internship@user`), then placed under `/home/internship/data/etri01/`.
 
 ## 5) Training runs used in paper
-Primary reported run:
-- `smolVLA_task_box_1050` (main run)
-
-Additional comparison runs:
-- `smolVLA_task_box_750` (fewer episodes)
-- `smolVLA_task_box_1050_toponly` (top camera only)
+Runs reported in this repository:
+- `smolVLA_task_box_750` (750 episodes)
+- `smolVLA_task_box_1050` (1050 episodes)
+- `smolVLA_task_box_1050_toponly` (1050 episodes, top camera only)
 
 All three runs use:
 - `steps=500000`
@@ -167,7 +165,7 @@ Compatibility note:
 
 Run timeline (known dates):
 - `smolVLA_task_box_750`: server checkpoint timestamps show `020000` at `2026-01-23` and `500000` at `2026-01-25`.
-- `smolVLA_task_box_1050` (main): training log starts on `2026-02-13`, with `020000` checkpoint at `2026-02-13` and `500000` at `2026-02-15`.
+- `smolVLA_task_box_1050`: training log starts on `2026-02-13`, with `020000` checkpoint at `2026-02-13` and `500000` at `2026-02-15`.
 - `smolVLA_task_box_1050_toponly`: server checkpoint timestamps show `020000` at `2026-02-25` and `500000` at `2026-02-27`.
 
 500k training command template:
