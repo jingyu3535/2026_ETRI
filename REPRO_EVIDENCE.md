@@ -227,7 +227,7 @@ This file tracks evidence used to avoid memory-only documentation.
   - `.npz` stores `attn` (and optional `lang_attn`), with metadata in paired `*_meta.json`.
   - `--heads` is accepted but restricted to `mean` in this codebase.
 
-20. SAM2-large mask generation pipeline for `eval_task_box_1050`
+20. SAM2-large mask generation pipeline for `eval_task_box_1050_B`
 - Source type:
   - User-provided command transcript (`2026-03-06`) for end-to-end mask pipeline.
   - Local script argument verification in this repo.
@@ -238,9 +238,11 @@ This file tracks evidence used to avoid memory-only documentation.
   - `/home/etri01/projects/lerobot/scripts/sam2_vos_test.py:30`
   - `/home/etri01/projects/lerobot/scripts/make_sam2_overlay_check.py:10`
 - Pipeline summary recorded in README:
-  - Dataset root: `/home/etri01/model/eval_task_box_1050`
+  - Dataset root: `/home/etri01/model/eval_task_box_1050_B`
   - Camera convention (analysis labels): `camera1=front`, `camera2=top`
   - Camera device mapping used in this repo: `front(camera1)=Innomaker`, `top(camera2)=Sonix`
+  - Cross-dump naming rule: e.g., `eval_task_box_1050_C` means `C@B` (dump by model C on frames from `..._B`)
+  - Example mapping: `eval_task_box_1050_B = B@B`, `eval_task_box_1050_C = C@B`
   - Seeding: 5-bin frame sampling per episode + extra first-object seeds for selected camera1 episodes
   - SAM2 inference: `sam2.1_hiera_l.yaml` + `sam2.1_hiera_large.pt`, `fill_before_prompt`, `out_index_base=1`
   - QA: overlay generation and frame/mask filename-set equality check
