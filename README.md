@@ -257,7 +257,7 @@ lerobot-record \
   --policy.type=smolvla \
   --policy.pretrained_path=${CKPT}
 
-# [Server] attention dump example (single run with 12 episodes)
+# [Server] attention dump example (per-model run: 12 episodes)
 PYTHONPATH=/home/internship/projects/lerobot/src \
   /home/internship/miniforge3/envs/lerobot/bin/python \
   /home/internship/projects/lerobot/scripts/dump_action_attn_eval.py \
@@ -274,7 +274,7 @@ PYTHONPATH=/home/internship/projects/lerobot/src \
   --log_every 50 \
   --log_time
 
-# If all three runs are merged into one eval dataset (36 episodes total), use:
+# If all three models are merged into one eval dataset (total 36 episodes), use:
 # --episodes 0-35
 ```
 
