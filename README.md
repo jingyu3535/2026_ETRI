@@ -113,11 +113,9 @@ lerobot-record \
 ```
 
 Collection details:
-- Language prompt template:
-- `pick the <object> and put it in the <box> box`
-- Prompts used in stages:
-- `pick the <object> and put it in the transparent box`
-- `pick the <object> and put it in the blue box`
+- Language prompt template: `pick the <object> and put it in the <box> box`
+- Prompt used in transparent stage: `pick the <object> and put it in the transparent box`
+- Prompt used in blue stage: `pick the <object> and put it in the blue box`
 
 Camera naming:
 - Paper text: `wrist-view`, `top-view`
