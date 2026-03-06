@@ -227,6 +227,26 @@ This file tracks evidence used to avoid memory-only documentation.
   - `.npz` stores `attn` (and optional `lang_attn`), with metadata in paired `*_meta.json`.
   - `--heads` is accepted but restricted to `mean` in this codebase.
 
+20. SAM2-large mask generation pipeline for `eval_task_box_1050`
+- Source type:
+  - User-provided command transcript (`2026-03-06`) for end-to-end mask pipeline.
+  - Local script argument verification in this repo.
+- Script/flag verification sources:
+  - `/home/etri01/projects/lerobot/scripts/seg_label_tool.py:9`
+  - `/home/etri01/projects/lerobot/scripts/sam2_vos_test.py:12`
+  - `/home/etri01/projects/lerobot/scripts/sam2_vos_test.py:28`
+  - `/home/etri01/projects/lerobot/scripts/sam2_vos_test.py:30`
+  - `/home/etri01/projects/lerobot/scripts/make_sam2_overlay_check.py:10`
+- Pipeline summary recorded in README:
+  - Dataset root: `/home/etri01/model/eval_task_box_1050`
+  - Camera convention: `camera1=front`, `camera2=top`
+  - Seeding: 5-bin frame sampling per episode + extra first-object seeds for selected camera1 episodes
+  - SAM2 inference: `sam2.1_hiera_l.yaml` + `sam2.1_hiera_large.pt`, `fill_before_prompt`, `out_index_base=1`
+  - QA: overlay generation and frame/mask filename-set equality check
+- Note:
+  - These commands are documented as the experiment procedure supplied by the user.
+  - Re-execution logs of this full SAM2 chain are not yet attached in this repository.
+
 ## Partial / needs confirmation
 
 1. Remote server exact package lock state at training time

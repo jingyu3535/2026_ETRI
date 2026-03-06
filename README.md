@@ -309,6 +309,157 @@ Notes:
 - `image` token ranges are identified via `img_spans` in metadata.
 - CLI accepts `--heads`, but this fork supports `mean` only.
 
+SAM2-large mask pipeline used for `eval_task_box_1050`:
+- Dataset root: `/home/etri01/model/eval_task_box_1050`
+- Camera convention: `camera1=front`, `camera2=top` (aligned to 750_A analysis convention)
+- Output masks: `/home/etri01/model/eval_task_box_1050/sam2_large`
+- Target split: episodes `0-35`, cameras `camera1,camera2`
+
+1. Create 5-bin seed frames per episode (0%, 25%, 50%, 75%, 100%)
+```bash
+/home/etri01/miniforge3/envs/lerobot/bin/python - <<'PY'
+from pathlib import Path
+import shutil
+
+root = Path("/home/etri01/model/eval_task_box_1050")
+for cam in ["camera1", "camera2"]:
+    in_root = root / "frames_by_ep" / cam
+    out_root = root / "seg_seed_frames" / cam
+    out_root.mkdir(parents=True, exist_ok=True)
+
+    for ep_dir in sorted(in_root.glob("ep*")):
+        frames = sorted(ep_dir.glob("frame_*.png"))
+        if not frames:
+            continue
+        n = len(frames)
+        idxs = [0, round((n - 1) * 0.25), round((n - 1) * 0.5), round((n - 1) * 0.75), n - 1]
+        idxs = sorted(set(idxs))
+        for i in idxs:
+            src = frames[i]
+            dst = out_root / f"{ep_dir.name}_{src.name}"
+            shutil.copy2(src, dst)
+        print(f"[done] {cam}/{ep_dir.name} -> {len(idxs)} seeds")
+PY
+```
+
+2. Manual seed mask labeling (`seg_label_tool.py`)
+```bash
+# camera1
+PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
+  /home/etri01/projects/lerobot/scripts/seg_label_tool.py \
+  --input_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames/camera1 \
+  --output_dir /home/etri01/model/eval_task_box_1050/seg_seed_masks/camera1
+
+# camera2
+PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
+  /home/etri01/projects/lerobot/scripts/seg_label_tool.py \
+  --input_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames/camera2 \
+  --output_dir /home/etri01/model/eval_task_box_1050/seg_seed_masks/camera2
+```
+
+Label-tool hotkeys:
+- Left click: add point
+- Right click: remove last point
+- `a`: finalize current polygon
+- `r`: reset current work
+- `s`: save filled mask and move next
+- `n`: save empty mask and move next
+- `q`: quit
+
+3. Add extra "first object appears" seeds for camera1 episodes with empty first seed
+```bash
+/home/etri01/miniforge3/envs/lerobot/bin/python - <<'PY'
+from pathlib import Path
+import shutil
+
+root = Path("/home/etri01/model/eval_task_box_1050")
+src_root = root / "frames_by_ep" / "camera1"
+dst_root = root / "seg_seed_frames" / "camera1_extra_first_object"
+dst_root.mkdir(parents=True, exist_ok=True)
+
+targets = {
+    0: [52],
+    7: [186, 187],
+    9: [207],
+    11: [188],
+    13: [169],
+    14: [215, 216],
+    15: [143, 144],
+    16: [187],
+    17: [399],
+}
+for ep, nums in targets.items():
+    epn = f"ep{ep:03d}"
+    for num in nums:
+        src = src_root / epn / f"frame_{num:05d}.png"
+        if not src.exists():
+            print("[missing]", src)
+            continue
+        dst = dst_root / f"{epn}_frame_{num:05d}.png"
+        shutil.copy2(src, dst)
+        print("[copied]", dst.name)
+PY
+
+PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
+  /home/etri01/projects/lerobot/scripts/seg_label_tool.py \
+  --input_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames/camera1_extra_first_object \
+  --output_dir /home/etri01/model/eval_task_box_1050/seg_seed_masks/camera1
+```
+
+4. Run SAM2-large VOS over full episodes
+```bash
+EP=$(seq -s, 0 35)
+
+PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
+  /home/etri01/projects/lerobot/scripts/sam2_vos_test.py \
+  --video_dir /home/etri01/model/eval_task_box_1050/video_by_ep \
+  --seed_frames_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames \
+  --seed_masks_dir /home/etri01/model/eval_task_box_1050/seg_seed_masks \
+  --out_dir /home/etri01/model/eval_task_box_1050/sam2_large \
+  --episodes "$EP" \
+  --cameras camera1,camera2 \
+  --model_cfg /tmp/segment-anything-2/sam2/configs/sam2.1/sam2.1_hiera_l.yaml \
+  --checkpoint /tmp/segment-anything-2/checkpoints/sam2.1_hiera_large.pt \
+  --device cuda \
+  --save_stride 1 \
+  --fill_before_prompt \
+  --out_index_base 1 \
+  --offload_video_to_cpu \
+  --offload_state_to_cpu
+```
+
+5. Generate full-frame overlay checks
+```bash
+PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
+  /home/etri01/projects/lerobot/scripts/make_sam2_overlay_check.py \
+  --frames_root /home/etri01/model/eval_task_box_1050/frames_by_ep \
+  --masks_root /home/etri01/model/eval_task_box_1050/sam2_large \
+  --out_root /home/etri01/model/eval_task_box_1050/sam2_overlay_check \
+  --episodes 0-35 \
+  --cameras camera1,camera2 \
+  --alpha 0.20 \
+  --draw_contour \
+  --contour_thickness 1
+```
+
+6. Final consistency check (frame/mask filename set must match)
+```bash
+/home/etri01/miniforge3/envs/lerobot/bin/python - <<'PY'
+from pathlib import Path
+root = Path("/home/etri01/model/eval_task_box_1050")
+ok = True
+for cam in ["camera1", "camera2"]:
+    for ep in range(36):
+        epn = f"ep{ep:03d}"
+        f = set(p.name for p in (root / "frames_by_ep" / cam / epn).glob("frame_*.png"))
+        m = set(p.name for p in (root / "sam2_large" / cam / epn).glob("frame_*.png"))
+        if f != m:
+            ok = False
+            print("[mismatch]", cam, epn, "missing", len(f - m), "extra", len(m - f))
+print("ALL_OK =", ok)
+PY
+```
+
 ## 7) Expected results
 Runtime summary example (`task_box_1050` log):
 - `cfg.steps=500000`
