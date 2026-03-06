@@ -129,10 +129,9 @@ Dataset growth used by analysis models:
 - Final `1050` totals = transparent `300` + blue `750` (banana `234`, socks `250`, strawberry `266`)
 
 Model-to-dataset mapping:
-- `smolVLA_task_box_750` -> `750` episodes
+- `smolVLA_task_box_750` -> `750` episodes (`task_box_750`)
 - `smolVLA_task_box_1050` -> `1050` episodes
 - `smolVLA_task_box_1050_toponly` -> same `1050` episodes with top-view-only input (`front` removed by `rename_map`)
-- Note: the `750` run uses dataset id/path `task_box_100` as a legacy dataset name.
 
 Transfer (local collection host -> remote training server):
 - Data transfer was performed manually in Termius (SFTP/SCP workflow) from local host (`etri01`) to server (`internship@user`), then placed under `/home/internship/data/etri01/`.
@@ -153,15 +152,18 @@ All three runs use:
 - `policy.scheduler_warmup_steps=15000`
 - `policy.scheduler_decay_steps=500000`
 
-Run matrix (from `checkpoints/500000/pretrained_model/train_config.json`):
+Run matrix:
 
 | Run | dataset.repo_id | dataset.root | rename_map | output_dir |
 | --- | --- | --- | --- | --- |
-| `smolVLA_task_box_750` | `task_box_100` | `/home/internship/data/etri01/task_box_100` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_750` |
+| `smolVLA_task_box_750` | `task_box_750` | `/home/internship/data/etri01/task_box_750` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_750` |
 | `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_1050` |
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `top->camera1` | `/home/internship/model/smolVLA_task_box_1050_toponly` |
 
-Note: `task_box_100` in the first row is the actual dataset id/path recorded in train configs for the 750 run (legacy naming).
+Compatibility note:
+- Original server run for `smolVLA_task_box_750` used legacy dataset id/path `task_box_100`.
+- This README normalizes it to `task_box_750` to match episode count and model naming.
+- If reproducing directly from the original server snapshot, replace `task_box_750` with `task_box_100`.
 
 Run timeline (known dates):
 - `smolVLA_task_box_750`: server checkpoint timestamps show `020000` at `2026-01-23` and `500000` at `2026-01-25`.
@@ -194,7 +196,7 @@ Run-specific values:
 
 | Run | dataset.repo_id | dataset.root | policy.repo_id | output_dir | rename_map |
 | --- | --- | --- | --- | --- | --- |
-| `smolVLA_task_box_750` | `task_box_100` | `/home/internship/data/etri01/task_box_100` | `internship/temp_model_750` | `/home/internship/model/smolVLA_task_box_750` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
+| `smolVLA_task_box_750` | `task_box_750` | `/home/internship/data/etri01/task_box_750` | `internship/temp_model_750` | `/home/internship/model/smolVLA_task_box_750` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
 | `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `internship/temp_model_1050` | `/home/internship/model/smolVLA_task_box_1050` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `internship/temp_model_1050_toponly` | `/home/internship/model/smolVLA_task_box_1050_toponly` | `{"observation.images.top":"observation.images.camera1"}` |
 
