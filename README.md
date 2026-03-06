@@ -246,7 +246,7 @@ lerobot-record \
   --teleop.port=/dev/ttyACM0 \
   --teleop.id=my_leader \
   --display_data=true \
-  --dataset.single_task="pick the strawberry and put it in the blue box" \
+  --dataset.single_task="pick the <object> and put it in the blue box" \
   --dataset.repo_id=etri01/eval_${RUN_TAG}_12ep \
   --dataset.root=/home/etri01/model/eval_${RUN_TAG}_12ep \
   --dataset.push_to_hub=false \
