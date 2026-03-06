@@ -132,6 +132,7 @@ Model-to-dataset mapping:
 - `smolVLA_task_box_750` -> `750` episodes
 - `smolVLA_task_box_1050` -> `1050` episodes
 - `smolVLA_task_box_1050_toponly` -> same `1050` episodes with top-view-only input (`front` removed by `rename_map`)
+- Note: the `750` run uses dataset id/path `task_box_100` as a legacy dataset name.
 
 Transfer (local collection host -> remote training server):
 - Data transfer was performed manually in Termius (SFTP/SCP workflow) from local host (`etri01`) to server (`internship@user`), then placed under `/home/internship/data/etri01/`.
@@ -159,6 +160,8 @@ Run matrix (from `checkpoints/500000/pretrained_model/train_config.json`):
 | `smolVLA_task_box_750` | `task_box_100` | `/home/internship/data/etri01/task_box_100` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_750` |
 | `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_1050` |
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `top->camera1` | `/home/internship/model/smolVLA_task_box_1050_toponly` |
+
+Note: `task_box_100` in the first row is the actual dataset id/path recorded in train configs for the 750 run (legacy naming).
 
 Run timeline (known dates):
 - `smolVLA_task_box_750`: server checkpoint timestamps show `020000` at `2026-01-23` and `500000` at `2026-01-25`.
