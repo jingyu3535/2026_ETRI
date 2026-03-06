@@ -278,6 +278,37 @@ PYTHONPATH=/home/internship/projects/lerobot/src \
 # --episodes 0-35
 ```
 
+Action-to-image cross-attention dump implementation (this fork):
+- Config flags (`src/lerobot/policies/smolvla/configuration_smolvla.py`):
+  - `dump_action_attn`, `dump_action_attn_layers`, `dump_action_attn_action_step`
+  - `dump_action_attn_last_denoise_only`, `dump_action_attn_denoise_step`
+- Inference path:
+  - `predict_action_chunk_with_attn()` -> `sample_actions(..., return_attn=True)`
+  - Denoise loop toggles capture with `set_action_attn_capture(...)` per selected denoise step/layer/action-step
+  - Captured buffer is read via `pop_action_attn_buffer()`
+- Attention capture point:
+  - `smolvlm_with_expert.py:eager_attention_forward()`
+  - Stores expert cross-attention `probs` at selected action query index
+  - Head dimension is averaged in-model (`mean` only in this codebase)
+- Saved files (`scripts/dump_action_attn_eval.py`):
+  - Per combination output: `epXXX_fXXXX_lYY_dZZ_aAA_action_attn.npz`
+  - Optional language attention dump when `--dump_lang` is enabled
+  - Paired metadata: `*_meta.json`
+  - Run summary: `summary.json` (episodes/layers/denoise_steps/action_steps/counts)
+
+Saved tensor/meta schema:
+- `.npz`
+  - `attn`: shape `[B, K]` (`B` batch, usually `1`; `K` prefix token length)
+  - `lang_attn` (optional with `--dump_lang`)
+- `*_meta.json`
+  - `episode_index`, `frame_index`, `task`, `layer`, `denoise_step`, `action_step`
+  - `img_spans`, `img_token_lens`, `img_grids`, `lang_range`, `state_range`, `camera_keys`
+
+Notes:
+- This dump stores action-expert cross-attention (action query -> prefix tokens).
+- `image` token ranges are identified via `img_spans` in metadata.
+- CLI accepts `--heads`, but this fork supports `mean` only.
+
 ## 7) Expected results
 Runtime summary example (`task_box_1050` log):
 - `cfg.steps=500000`

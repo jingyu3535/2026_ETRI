@@ -204,6 +204,29 @@ This file tracks evidence used to avoid memory-only documentation.
   - `policy.scheduler_decay_steps=500000`
   - `rename_map` explicitly set per run (`front/top -> camera1/camera2` or `top -> camera1`)
 
+19. Action-to-image cross-attention dump implementation evidence
+- Config flag sources:
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/configuration_smolvla.py:72`
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/configuration_smolvla.py:78`
+- Capture-flow sources:
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/modeling_smolvla.py:323` (`predict_action_chunk_with_attn`)
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/modeling_smolvla.py:909` (`dump_action_attn_denoise_step`)
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/modeling_smolvla.py:924` (`set_action_attn_capture`)
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/modeling_smolvla.py:949` (`pop_action_attn_buffer`)
+- Attention tensor source:
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/smolvlm_with_expert.py:568`
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/smolvlm_with_expert.py:617`
+  - `/home/etri01/projects/lerobot/src/lerobot/policies/smolvla/smolvlm_with_expert.py:618`
+- Dump file schema source:
+  - `/home/etri01/projects/lerobot/scripts/dump_action_attn_eval.py:190`
+  - `/home/etri01/projects/lerobot/scripts/dump_action_attn_eval.py:412`
+  - `/home/etri01/projects/lerobot/scripts/dump_action_attn_eval.py:438`
+  - `/home/etri01/projects/lerobot/scripts/dump_action_attn_eval.py:460`
+- Confirmed behavior:
+  - Script loops over selected `layers x denoise_steps x action_step` and saves per-combination dump files.
+  - `.npz` stores `attn` (and optional `lang_attn`), with metadata in paired `*_meta.json`.
+  - `--heads` is accepted but restricted to `mean` in this codebase.
+
 ## Partial / needs confirmation
 
 1. Remote server exact package lock state at training time
