@@ -112,36 +112,34 @@ lerobot-record \
   --manual_advance=true
 ```
 
-Collection-command variants actually used during experiments:
-- Camera path style changed over time: numeric index / `/dev/video*` in early runs, then fixed `/dev/v4l/by-id/*` for stability.
-- OpenCV backend override exports were used in part of runs (not all runs).
-- `--resume=true` was used for continued collection; `--resume=false` appears in separate evaluation-style recordings.
-
-Data was transferred between local and server using SCP/rsync in Termius-based workflow.
-
-Language prompt template used for collection/evaluation:
+Collection details:
+- Language prompt template:
 - `pick the <object> and put it in the <box> box`
+- Prompts used in stages:
+- `pick the <object> and put it in the transparent box`
+- `pick the <object> and put it in the blue box`
 
-Camera naming note:
-- In paper text we refer to `wrist-view` and `top-view`.
-- In released data/code keys, these are stored as `observation.images.front` (wrist-view) and `observation.images.top` (top-view).
+Camera naming:
+- Paper text: `wrist-view`, `top-view`
+- Stored keys: `observation.images.front` (wrist-view), `observation.images.top` (top-view)
 
-Verified prompts and counts from `/home/etri01/.cache/huggingface/lerobot/etri01/task_box_1050/meta/episodes/chunk-000/*.parquet`:
-- `pick the banana and put it in the transparent box`: `100`
-- `pick the socks and put it in the transparent box`: `100`
-- `pick the strawberry and put it in the transparent box`: `100`
-- `pick the banana and put it in the blue box`: `234`
-- `pick the socks and put it in the blue box`: `250`
-- `pick the strawberry and put it in the blue box`: `266`
+Episode counts by collection stage:
+- Stage A (transparent): `300` total = banana `100`, socks `100`, strawberry `100`
+- Stage B (blue, add): `+300` = banana `84`, socks `100`, strawberry `116` (cumulative `600`)
+- Stage C (blue, add): `+150` = banana `50`, socks `50`, strawberry `50` (cumulative `750`)
+- Stage D (blue, add): `+300` = banana `100`, socks `100`, strawberry `100` (cumulative `1050`)
 
-Dataset composition summary:
-- Transparent-box episodes: `300` (`100` per object)
-- Blue-box episodes in final `task_box_1050`: `750` (`234/250/266` by banana/socks/strawberry)
-- Intermediate `750` setting used during development: `300 + 450` where the additional blue split is `134/150/166` (banana/socks/strawberry)
+Final totals:
+- Transparent episodes: `300`
+- Blue episodes: `750` = banana `234`, socks `250`, strawberry `266`
+- Overall: `1050`
 
-Why transparent -> blue:
-- Practical observation during early inference was unstable target-box recognition on transparent container, so later collection used blue box for stronger visual contrast.
-- This reason is observation-based; no separate quantitative ablation log is currently archived.
+Transfer (local collection host -> remote training server):
+- Collected episodes were copied from local host (`etri01`) to server (`internship@user`) and placed under `/home/internship/data/etri01/`.
+- Example:
+```bash
+rsync -avhP /home/etri01/<local_dataset_dir>/ internship@<SERVER_IP>:/home/internship/data/etri01/<dataset_name>/
+```
 
 ## 5) Training runs used in paper
 Primary reported run:
