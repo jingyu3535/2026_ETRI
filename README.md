@@ -86,9 +86,15 @@ lerobot-teleoperate \
 ```
 
 ## 4) Dataset collection and transfer
+Canonical collection command (blue-box stage):
+
 ```bash
-# [Local host] SO101 teleoperation data collection example
-OPENCV_VIDEOIO_PRIORITY_FFMPEG=0 OPENCV_VIDEOIO_PRIORITY_GSTREAMER=0 lerobot-record \
+# [Local host] optional OpenCV backend override (used in part of runs)
+export OPENCV_VIDEOIO_PRIORITY_FFMPEG=0
+export OPENCV_VIDEOIO_PRIORITY_GSTREAMER=0
+
+# SO101 teleoperation recording
+lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
   --robot.id=my_follower \
@@ -100,10 +106,16 @@ OPENCV_VIDEOIO_PRIORITY_FFMPEG=0 OPENCV_VIDEOIO_PRIORITY_GSTREAMER=0 lerobot-rec
   --dataset.repo_id=etri01/blue_box_data \
   --resume=true \
   --dataset.push_to_hub=false \
-  --dataset.num_episodes=75 \
+  --dataset.num_episodes=<N> \
   --dataset.reset_time_s=0 \
-  --dataset.single_task="pick the banana and put it in the blue box"
+  --dataset.single_task="pick the <object> and put it in the blue box" \
+  --manual_advance=true
 ```
+
+Collection-command variants actually used during experiments:
+- Camera path style changed over time: numeric index / `/dev/video*` in early runs, then fixed `/dev/v4l/by-id/*` for stability.
+- OpenCV backend override exports were used in part of runs (not all runs).
+- `--resume=true` was used for continued collection; `--resume=false` appears in separate evaluation-style recordings.
 
 Data was transferred between local and server using SCP/rsync in Termius-based workflow.
 

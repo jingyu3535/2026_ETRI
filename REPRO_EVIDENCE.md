@@ -172,6 +172,21 @@ This file tracks evidence used to avoid memory-only documentation.
   - `NO_TIMESTAMP | cd /home/internship/projects/lerobot && lerobot-train ... --dataset.repo_id=task_box_1050_toponly ...`
 - Interpretation: command exists, but shell-history timestamp metadata was unavailable; server checkpoint `stat` times are the reliable date anchor.
 
+17. Data-collection command variants in local history
+- Source: `/home/etri01/.bash_history` (`lerobot-record` lines), parsed on `2026-03-05`
+- Aggregate counts:
+  - total `lerobot-record` entries scanned: `112`
+  - `--dataset.repo_id=etri01/blue_box_data`: `27`
+  - `--dataset.repo_id=etri01/eval_task_box_1050_cam2only`: `7`
+  - `--manual_advance=true`: `21`
+  - `--resume=true`: `27`
+  - `--resume=false`: `7`
+  - camera path style: `/dev/v4l/by-id/*` (`29`), `/dev/video*` (`1`), numeric index style (`4`)
+  - OpenCV backend override text appears in a subset of entries (`3`)
+- Interpretation:
+  - The command evolved during development.
+  - README uses a canonical late-stage collection command (stable `/dev/v4l/by-id` paths) plus explicit variant notes.
+
 ## Partial / needs confirmation
 
 1. Remote server exact package lock state at training time
