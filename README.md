@@ -247,8 +247,8 @@ lerobot-record \
   --teleop.id=my_leader \
   --display_data=true \
   --dataset.single_task="pick the <object> and put it in the blue box" \
-  --dataset.repo_id=etri01/eval_${RUN_TAG}_12ep \
-  --dataset.root=/home/etri01/model/eval_${RUN_TAG}_12ep \
+  --dataset.repo_id=etri01/eval_${RUN_TAG} \
+  --dataset.root=/home/etri01/model/eval_${RUN_TAG} \
   --dataset.push_to_hub=false \
   --dataset.episode_time_s=40 \
   --dataset.reset_time_s=10 \
@@ -261,10 +261,10 @@ lerobot-record \
 PYTHONPATH=/home/internship/projects/lerobot/src \
   /home/internship/miniforge3/envs/lerobot/bin/python \
   /home/internship/projects/lerobot/scripts/dump_action_attn_eval.py \
-  --dataset_root /home/internship/model/eval_${RUN_TAG}_12ep \
-  --dataset_repo_id etri01/eval_${RUN_TAG}_12ep \
+  --dataset_root /home/internship/model/eval_${RUN_TAG} \
+  --dataset_repo_id etri01/eval_${RUN_TAG} \
   --checkpoint /home/internship/model/${RUN_TAG}/checkpoints/500000/pretrained_model \
-  --dump_dir /home/internship/model/eval_${RUN_TAG}_12ep/action_attn_dump_img \
+  --dump_dir /home/internship/model/eval_${RUN_TAG}/action_attn_dump_img \
   --episodes 0-11 \
   --layers 1,5,9,13,15 \
   --denoise_steps 0,5,9 \
@@ -319,46 +319,33 @@ SAM2-large mask pipeline used for `eval_task_box_1050`:
 - Output masks: `/home/etri01/model/eval_task_box_1050/sam2_large`
 - Target split: episodes `0-35`, cameras `camera1,camera2`
 
-1. Create 5-bin seed frames per episode (0%, 25%, 50%, 75%, 100%)
+Step 1. Create 5-bin seed frames per episode (0/25/50/75/100%)
 ```bash
-/home/etri01/miniforge3/envs/lerobot/bin/python - <<'PY'
-from pathlib import Path
-import shutil
+ROOT=/home/etri01/model/eval_task_box_1050
 
-root = Path("/home/etri01/model/eval_task_box_1050")
-for cam in ["camera1", "camera2"]:
-    in_root = root / "frames_by_ep" / cam
-    out_root = root / "seg_seed_frames" / cam
-    out_root.mkdir(parents=True, exist_ok=True)
-
-    for ep_dir in sorted(in_root.glob("ep*")):
-        frames = sorted(ep_dir.glob("frame_*.png"))
-        if not frames:
-            continue
-        n = len(frames)
-        idxs = [0, round((n - 1) * 0.25), round((n - 1) * 0.5), round((n - 1) * 0.75), n - 1]
-        idxs = sorted(set(idxs))
-        for i in idxs:
-            src = frames[i]
-            dst = out_root / f"{ep_dir.name}_{src.name}"
-            shutil.copy2(src, dst)
-        print(f"[done] {cam}/{ep_dir.name} -> {len(idxs)} seeds")
-PY
+PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
+  /home/etri01/projects/lerobot/scripts/tools/make_seed_frames_5bins.py \
+  --frames_root ${ROOT}/frames_by_ep \
+  --out_root ${ROOT}/seg_seed_frames \
+  --episodes 0-35 \
+  --cameras camera1,camera2
 ```
 
-2. Manual seed mask labeling (`seg_label_tool.py`)
+Step 2. Manual seed mask labeling (`seg_label_tool.py`)
 ```bash
+ROOT=/home/etri01/model/eval_task_box_1050
+
 # camera1
 PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   /home/etri01/projects/lerobot/scripts/seg_label_tool.py \
-  --input_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames/camera1 \
-  --output_dir /home/etri01/model/eval_task_box_1050/seg_seed_masks/camera1
+  --input_dir ${ROOT}/seg_seed_frames/camera1 \
+  --output_dir ${ROOT}/seg_seed_masks/camera1
 
 # camera2
 PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   /home/etri01/projects/lerobot/scripts/seg_label_tool.py \
-  --input_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames/camera2 \
-  --output_dir /home/etri01/model/eval_task_box_1050/seg_seed_masks/camera2
+  --input_dir ${ROOT}/seg_seed_frames/camera2 \
+  --output_dir ${ROOT}/seg_seed_masks/camera2
 ```
 
 Label-tool hotkeys:
@@ -370,27 +357,30 @@ Label-tool hotkeys:
 - `n`: save empty mask and move next
 - `q`: quit
 
-3. Optional correction for empty first-seed masks
+Step 3. Optional correction for empty first-seed masks
 - For episodes where the first seed mask is empty but the object appears later, add one extra seed frame near first object appearance and label it manually.
 - Extra seed frames are stored under `/home/etri01/model/eval_task_box_1050/seg_seed_frames/camera1_extra_first_object` and merged into the existing camera1 seed-mask directory.
 
 ```bash
+ROOT=/home/etri01/model/eval_task_box_1050
+
 PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   /home/etri01/projects/lerobot/scripts/seg_label_tool.py \
-  --input_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames/camera1_extra_first_object \
-  --output_dir /home/etri01/model/eval_task_box_1050/seg_seed_masks/camera1
+  --input_dir ${ROOT}/seg_seed_frames/camera1_extra_first_object \
+  --output_dir ${ROOT}/seg_seed_masks/camera1
 ```
 
-4. Run SAM2-large VOS over full episodes
+Step 4. Run SAM2-large VOS over full episodes
 ```bash
+ROOT=/home/etri01/model/eval_task_box_1050
 EP=$(seq -s, 0 35)
 
 PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   /home/etri01/projects/lerobot/scripts/sam2_vos_test.py \
-  --video_dir /home/etri01/model/eval_task_box_1050/video_by_ep \
-  --seed_frames_dir /home/etri01/model/eval_task_box_1050/seg_seed_frames \
-  --seed_masks_dir /home/etri01/model/eval_task_box_1050/seg_seed_masks \
-  --out_dir /home/etri01/model/eval_task_box_1050/sam2_large \
+  --video_dir ${ROOT}/video_by_ep \
+  --seed_frames_dir ${ROOT}/seg_seed_frames \
+  --seed_masks_dir ${ROOT}/seg_seed_masks \
+  --out_dir ${ROOT}/sam2_large \
   --episodes "$EP" \
   --cameras camera1,camera2 \
   --model_cfg /tmp/segment-anything-2/sam2/configs/sam2.1/sam2.1_hiera_l.yaml \
@@ -403,13 +393,15 @@ PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   --offload_state_to_cpu
 ```
 
-5. Generate full-frame overlay checks
+Step 5. Generate full-frame overlay checks
 ```bash
+ROOT=/home/etri01/model/eval_task_box_1050
+
 PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   /home/etri01/projects/lerobot/scripts/make_sam2_overlay_check.py \
-  --frames_root /home/etri01/model/eval_task_box_1050/frames_by_ep \
-  --masks_root /home/etri01/model/eval_task_box_1050/sam2_large \
-  --out_root /home/etri01/model/eval_task_box_1050/sam2_overlay_check \
+  --frames_root ${ROOT}/frames_by_ep \
+  --masks_root ${ROOT}/sam2_large \
+  --out_root ${ROOT}/sam2_overlay_check \
   --episodes 0-35 \
   --cameras camera1,camera2 \
   --alpha 0.20 \
@@ -417,22 +409,16 @@ PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   --contour_thickness 1
 ```
 
-6. Final consistency check (frame/mask filename set must match)
+Step 6. Final consistency check (frame/mask filename set must match)
 ```bash
-/home/etri01/miniforge3/envs/lerobot/bin/python - <<'PY'
-from pathlib import Path
-root = Path("/home/etri01/model/eval_task_box_1050")
-ok = True
-for cam in ["camera1", "camera2"]:
-    for ep in range(36):
-        epn = f"ep{ep:03d}"
-        f = set(p.name for p in (root / "frames_by_ep" / cam / epn).glob("frame_*.png"))
-        m = set(p.name for p in (root / "sam2_large" / cam / epn).glob("frame_*.png"))
-        if f != m:
-            ok = False
-            print("[mismatch]", cam, epn, "missing", len(f - m), "extra", len(m - f))
-print("ALL_OK =", ok)
-PY
+ROOT=/home/etri01/model/eval_task_box_1050
+
+PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
+  /home/etri01/projects/lerobot/scripts/tools/check_frame_mask_match.py \
+  --frames_root ${ROOT}/frames_by_ep \
+  --masks_root ${ROOT}/sam2_large \
+  --episodes 0-35 \
+  --cameras camera1,camera2
 ```
 
 ## 7) Expected results

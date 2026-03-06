@@ -18,6 +18,8 @@ This folder contains local experimentation scripts that are not part of the core
 
 ## Utilities
 - `tools/fix_dataset.py`: Injects/fixes task label metadata for a local dataset copy.
+- `tools/make_seed_frames_5bins.py`: Copies 5-bin seed frames per episode for SAM2 seed labeling.
+- `tools/check_frame_mask_match.py`: Validates frame/mask filename-set equality per episode/camera.
 - `tools/test_wandb.py`: Minimal W&B connectivity test (requires `WANDB_API_KEY` env var).
 
 ## Note
