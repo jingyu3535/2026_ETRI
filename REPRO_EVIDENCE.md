@@ -239,7 +239,8 @@ This file tracks evidence used to avoid memory-only documentation.
   - `/home/etri01/projects/lerobot/scripts/make_sam2_overlay_check.py:10`
 - Pipeline summary recorded in README:
   - Dataset root: `/home/etri01/model/eval_task_box_1050`
-  - Camera convention: `camera1=front`, `camera2=top`
+  - Camera convention (analysis labels): `camera1=front`, `camera2=top`
+  - Note: physical device/vendor mapping for `front/top` is host-dependent and may swap across sessions
   - Seeding: 5-bin frame sampling per episode + extra first-object seeds for selected camera1 episodes
   - SAM2 inference: `sam2.1_hiera_l.yaml` + `sam2.1_hiera_large.pt`, `fill_before_prompt`, `out_index_base=1`
   - QA: overlay generation and frame/mask filename-set equality check
