@@ -1,9 +1,0 @@
-camera,condition,image_ratio,object_ratio,source
-camera1,P@A,0.2906129996961747,0.1423494670394582,raw_dump_direct_PA_AA_BA_BB_compare.csv
-camera1,A@A,0.2287169908986364,0.132230461007137,T2_main_transition
-camera1,B@A,0.2196371548878741,0.125591158848612,T2_main_transition
-camera1,B@B,0.3629217913340982,0.1160264573608904,T2_main_transition
-camera2,P@A,0.3003267120484985,0.0227653094214783,raw_dump_direct_PA_AA_BA_BB_compare.csv
-camera2,A@A,0.3973046194892957,0.0332367083483314,T2_main_transition
-camera2,B@A,0.4055584602196291,0.0288754011835254,T2_main_transition
-camera2,B@B,0.2756482903237471,0.0173906021906045,T2_main_transition

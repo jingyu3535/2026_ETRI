@@ -1,5 +1,0 @@
-model,train_dataset,episodes,camera_setup,analysis_view
-A,task_box_750,750,front+top,A@A
-B,task_box_1050,1050,front+top,"B@A, B@B"
-C,task_box_1050_toponly,1050,top-only,C@A
-D,task_box_795,795,front+top,D@A
