@@ -270,7 +270,6 @@ This file tracks evidence used to avoid memory-only documentation.
   - `batch_size=32`, `steps=500000`, `optimizer_lr=5e-5`, `warmup=15000`, `decay=500000`
 - Timestamp note:
   - Local archived `500000` checkpoint file timestamp: `2026-03-11`.
-  - Local workspace copy does not include `020000` checkpoint for this run.
 
 ## Partial / needs confirmation
 

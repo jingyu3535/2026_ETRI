@@ -177,7 +177,7 @@ Run timeline (known dates):
 - `smolVLA_task_box_750`: server checkpoint timestamps show `020000` at `2026-01-23` and `500000` at `2026-01-25`.
 - `smolVLA_task_box_1050`: training log starts on `2026-02-13`, with `020000` checkpoint at `2026-02-13` and `500000` at `2026-02-15`.
 - `smolVLA_task_box_1050_toponly`: server checkpoint timestamps show `020000` at `2026-02-25` and `500000` at `2026-02-27`.
-- `smolVLA_task_box_795`: local archived `500000` checkpoint timestamp is `2026-03-11` (no local `020000` copy in this workspace).
+- `smolVLA_task_box_795`: local archived `500000` checkpoint timestamp is `2026-03-11`.
 
 500k training command template:
 ```bash
