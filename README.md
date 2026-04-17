@@ -443,13 +443,26 @@ PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   --cameras camera1,camera2
 ```
 
-## 7) Expected results
-Runtime summary example (`task_box_1050` log):
-- `cfg.steps=500000`
-- `dataset.num_frames=421143`
-- `dataset.num_episodes=1050`
-- `effective batch size=32`
-- Final task metrics and success rates: `TODO`
+## 7) Results summary
+Use this section as an index to final paper results. Keep only concise conclusions here; store raw tables/figures in `results/paper/`.
+
+Result file locations:
+- Tables: `results/paper/tables/`
+- Figures: `results/paper/figures/`
+- Package spec: `docs/paper_release/05_RESULTS_PACKAGE.md`
+
+Recommended reading order (paper flow):
+- `T1_model_effect_AA_vs_BA.csv`: model-only change on fixed A frames (`A@A -> B@A`)
+- `T2_state_shift_BA_vs_BB.csv`: on-policy shift (`B@A -> B@B`)
+- `T3_onpolicy_perf_36ep_A_vs_B.csv`: behavior performance linkage
+- `T4_prelim_CA_DA_vs_AA.csv`: preliminary C/D comparison (explicitly marked preliminary)
+- `S1_full_matrix_all_pairs_all_metrics.csv`: full appendix matrix (`P@A, A@A, B@A, B@B, C@A, D@A`)
+
+Quick summary points to report:
+- `A@A -> B@A`: object-centered attention decreases on fixed frames.
+- `B@A -> B@B`: image mass redistributes toward wrist-view and away from top-view.
+- On-policy performance (`36ep`) is lower for B than A.
+- `C@A`, `D@A`: no strong conclusion yet; rerun with unified pipeline before final claim.
 
 ## 8) Local code changes summary
 Core modified files:
