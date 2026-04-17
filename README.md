@@ -443,8 +443,40 @@ PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   --cameras camera1,camera2
 ```
 
+### Metric Definition and Aggregation (used in Sections 7/8)
+Primary source code:
+- `scripts/make_attention_ratio_table.py`
+- `scripts/export_paper_summary_assets.py`
+
+Per-frame definitions (action-to-prefix cross-attention):
+- `image_mass = sum(attn over selected camera image tokens)`
+- `total_mass = sum(attn over full prefix tokens)`
+- `image_ratio = image_mass / total_mass`
+- `object_mass = sum(attn_token * coverage_token)`
+- `object_ratio = object_mass / image_mass`
+
+Soft coverage definition (SAM2-based):
+- Default mode: `mask_mode=soft`, `mask_pad_size=512`
+- Binary SAM2 mask is resized/padded to `512x512`, then downsampled to token grid (`8x8` for topcam setting).
+- `coverage_token` is continuous in `[0, 1]` and used as a weight for `object_mass`.
+
+Missing/empty mask handling:
+- If mask file is missing or mask is all-zero, `object_mass/object_ratio` are stored as `NaN` for that row.
+- `image_mass/image_ratio` are still computed from attention.
+
+Aggregation rule used for summary tables/figures:
+- Packed dumps (`A_A/B_A/C_A/D_A/B_B`): average attention over selected denoise steps and action queries.
+- `P_A` base dumps: aggregate per-step dumps, then average to the same prefix-level form.
+- Group means in results are computed from these row-level metrics.
+
+Reporting convention used in this release:
+- Main text metrics: `image_ratio` (allocation) + `object_ratio` (grounding).
+- Support metric: `object_mass` (absolute object-referenced attention).
+- `image_mass` is retained in CSVs for compatibility; in this pipeline it is numerically near-identical to `image_ratio` because `total_mass` is approximately `1` after attention softmax normalization.
+
 ## 7) Hypotheses and claim order
 This paper release organizes claims by hypothesis, then maps each hypothesis to concrete comparison tables/figures.
+All numbers in this section follow the metric/aggregation definition above (`soft` coverage, `mask_pad_size=512`).
 
 H1 (fixed-frame model effect):
 - Claim: `A@A -> B@A` already weakens object grounding on the same `A` frames.

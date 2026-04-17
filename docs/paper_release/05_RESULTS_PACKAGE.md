@@ -7,6 +7,10 @@
 - `results/paper/tables`
 - `results/paper/figures`
 
+## 지표 정의 참조
+- 계산식/집계 규칙은 `06_METRIC_DEFINITIONS.md`를 기준으로 고정한다.
+- 본문 메인 지표는 `image_ratio + object_ratio`, 보조 지표는 `object_mass`.
+
 ## 핵심 표
 1. `hypothesis_test_map.csv`
 - H1~H4 가설과 대응 비교쌍/지표/표/그림 매핑
