@@ -511,6 +511,18 @@ Current draft files:
 - `results/paper/abcd_story/RESULTS_PACKAGE.md`
 - `results/paper/abcd_story/SECTION8_FLOW_DRAFT.md`
 
+### 8.0 Experimental flow draft (text)
+
+We first trained **Model A** on the baseline dataset and evaluated 36 episodes.
+As shown in Table 8.1, Model A succeeds on socks (`11/12`) but shows clear weakness on strawberry (`0/12` success), indicating that coarse approach is often possible while precise pick is unstable on small objects.
+
+To connect behavior and attention, we then compared **P@A vs A@A**.
+In the wrist camera (`camera1`), `image_mass` drops from `0.291` to `0.231` (`-20.3%`), and `object_ratio` drops from `0.142` to `0.126` (`-11.2%`).
+This suggests reduced wrist-camera object-referenced attention relative to the pretrained baseline.
+
+Combining the outcome pattern (weak fine-grained picking) and the attention shift, we moved to the next step: collecting additional close-range pick/place-focused data and training **Model B**.
+The next subsection reports this transition in the same table-first format.
+
 ### 8.1 Model A baseline outcome (36 episodes)
 
 Sources:
