@@ -511,18 +511,6 @@ Current draft files:
 - `results/paper/abcd_story/RESULTS_PACKAGE.md`
 - `results/paper/abcd_story/SECTION8_FLOW_DRAFT.md`
 
-### 8.0 Experimental flow draft (text)
-
-We first trained **Model A** on the baseline dataset and evaluated 36 episodes.
-As shown in Table 8.1, Model A succeeds on socks (`11/12`) but shows clear weakness on strawberry (`0/12` success), indicating that coarse approach is often possible while precise pick is unstable on small objects.
-
-To connect behavior and attention, we then compared **P@A vs A@A**.
-In the wrist camera (`camera1`), `image_mass` drops from `0.291` to `0.231` (`-20.3%`), and `object_ratio` drops from `0.142` to `0.126` (`-11.2%`).
-This suggests reduced wrist-camera object-referenced attention relative to the pretrained baseline.
-
-Combining the outcome pattern (weak fine-grained picking) and the attention shift, we moved to the next step: collecting additional close-range pick/place-focused data and training **Model B**.
-The next subsection reports this transition in the same table-first format.
-
 ### 8.1 Model A baseline outcome (36 episodes)
 
 Sources:
@@ -538,7 +526,7 @@ Sources:
 Interpretation:
 - Model A often reaches the object, but pick quality is weak, especially on strawberry.
 
-### 8.2 P@A vs A@A attention (before Model B)
+### 8.2 P@A vs A@A attention (Model A analysis)
 
 Image Mass:
 - `results/paper/abcd_story/tables/Table_02_PA_AA_image_mass_by_camera.csv`
@@ -560,7 +548,16 @@ Object Ratio:
 
 Interpretation:
 - Wrist camera (`camera1`) drops in both metrics from pretrained to A@A.
-- This supports the transition to Model B training with additional pick/place-focused data.
+
+### 8.3 Why we moved to Model B (after tables)
+
+From the two tables above, Model A shows a consistent pattern:
+- behavior: approach is often possible, but fine-grained picking is unstable (especially strawberry),
+- attention: wrist-camera object-referenced attention decreases vs pretrained (`camera1` drop in both metrics).
+
+To target this gap, we collected additional close-range data focused on the **pick->place** segment and trained **Model B**:
+- added data: `+300 episodes` (`banana 100`, `socks 100`, `strawberry 100`),
+- training set transition: `task_box_750 -> task_box_1050`.
 
 ## 9) Local code changes summary
 Core modified files:

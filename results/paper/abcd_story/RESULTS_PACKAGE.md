@@ -17,7 +17,7 @@ Source files:
 Interpretation:
 - A model can approach, but pick quality is weak (especially strawberry).
 
-## Step 2. Attention comparison before Model B (P@A vs A@A)
+## Step 2. P@A vs A@A attention (Model A analysis)
 
 ### 2-1) Image Mass
 
@@ -43,4 +43,13 @@ Source files:
 
 Interpretation:
 - For camera1 (wrist), both `image_mass` and `object_ratio` decrease vs pretrained.
-- This fits the narrative: approach is often possible, but precise picking is unstable; therefore additional pick/place-focused data was collected for Model B.
+
+## Step 3. Why we moved to Model B (after tables)
+
+After the two tables above, the flow is:
+- behavior: Model A can often approach but struggles in precise picking (especially strawberry),
+- attention: wrist camera (`camera1`) decreases in both metrics vs pretrained.
+
+To address this gap, we trained Model B with additional close-range pick/place-focused data:
+- added episodes: `+300` (`banana 100`, `socks 100`, `strawberry 100`),
+- dataset transition: `task_box_750 -> task_box_1050`.
