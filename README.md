@@ -2,6 +2,13 @@
 
 This repository is the code release for paper experiments built on LeRobot with local SmolVLA-related changes.
 
+## Quick start for paper organization
+- Playbook index: `docs/paper_release/README.md`
+- Ordered workflow: `docs/paper_release/01_EXPERIMENT_WORKFLOW.md`
+- Release checklist: `docs/paper_release/02_RELEASE_CHECKLIST.md`
+- Result package spec: `docs/paper_release/05_RESULTS_PACKAGE.md`
+- Generated assets root: `results/paper/`
+
 ## Base
 - Upstream: `huggingface/lerobot`
 - Base commit: `15724826`

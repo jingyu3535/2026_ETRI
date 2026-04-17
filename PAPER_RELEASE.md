@@ -2,6 +2,14 @@
 
 This branch is the reproducibility-focused release for the paper.
 
+## Quick Links
+- Ordered workflow: `docs/paper_release/01_EXPERIMENT_WORKFLOW.md`
+- Release checklist: `docs/paper_release/02_RELEASE_CHECKLIST.md`
+- Artifact policy: `docs/paper_release/03_ARTIFACT_POLICY.md`
+- D dataset reproduction: `docs/paper_release/04_DATASET_D_TASK_BOX_795.md`
+- Result package spec: `docs/paper_release/05_RESULTS_PACKAGE.md`
+- Generated summary assets: `results/paper/`
+
 ## Base
 - Upstream project: `huggingface/lerobot`
 - Base commit used for local work: `15724826`

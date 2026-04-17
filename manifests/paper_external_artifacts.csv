@@ -1,0 +1,8 @@
+category,artifact,path,notes,regenerate_or_source
+raw_dump,P_A_dump_raw,/home/etri01/논문/eval/eval_task_box_750_P/action_attn_dump_img/_raw_base,Base model cross-attn raw dump,scripts/dump_action_attn_eval.py
+raw_dump,A_A_dump_raw,/home/etri01/논문/eval/eval_task_box_750_A/action_attn_dump_img_all,A model cross-attn raw dump,scripts/dump_action_attn_eval.py
+raw_dump,B_A_dump_raw,/home/etri01/논문/eval/eval_task_box_750_B/action_attn_dump_img/_raw_tuned,B model cross-attn raw dump,scripts/dump_action_attn_eval.py
+raw_dump,C_A_dump_raw,/home/etri01/논문/eval/eval_task_box_750_C/action_attn_dump_img/_raw_tuned,C model cross-attn raw dump,scripts/dump_action_attn_eval.py
+raw_dump,D_A_dump_raw,/home/etri01/논문/eval/eval_task_box_750_D/action_attn_dump_img/_raw_tuned,D model cross-attn raw dump,scripts/dump_action_attn_eval.py
+sam2_mask,A_A_camera2_masks,/home/etri01/논문/eval/eval_task_box_750_A/sam2_large/camera2,SAM2 masks used for soft coverage,mask pipeline (SAM2)
+metrics_root,heatmap_metrics,/home/etri01/논문/eval/hetmap/metrics,Primary metrics root for summary export,scripts/export_paper_summary_assets.py
