@@ -24,6 +24,12 @@ PALETTE = {
     "outcome_3": "#E45756",
 }
 
+B_MANUAL_OUTCOME_SEQ = {
+    "banana": "221222/333232",
+    "socks": "111112/112112",
+    "strawberry": "223122/222222",
+}
+
 
 def _style() -> None:
     plt.rcParams.update(
@@ -56,6 +62,16 @@ def _copy_tree(src: Path, dst: Path) -> None:
     if dst.exists():
         shutil.rmtree(dst)
     shutil.copytree(src, dst)
+
+
+def _count_outcomes_from_seq(seq: str) -> dict[int, int]:
+    digits = [int(ch) for ch in seq.replace("/", "").strip() if ch.isdigit()]
+    return {
+        1: sum(1 for d in digits if d == 1),
+        2: sum(1 for d in digits if d == 2),
+        3: sum(1 for d in digits if d == 3),
+        0: len(digits),
+    }
 
 
 def build_tables(
@@ -184,6 +200,34 @@ def build_tables(
     by_obj["success_rate_pct"] = 100.0 * by_obj["success_n"] / by_obj["total_n"].clip(lower=1)
     by_obj.to_csv(out_tables / "Table_04_A_36ep_outcome_by_object.csv", index=False)
 
+    b_manual_rows = []
+    for obj in ["banana", "socks", "strawberry"]:
+        seq = B_MANUAL_OUTCOME_SEQ[obj]
+        cnt = _count_outcomes_from_seq(seq)
+        b_manual_rows.append(
+            {
+                "object": obj,
+                "outcome_sequence": seq,
+                "success_n": cnt[1],
+                "partial_n": cnt[2],
+                "fail_n": cnt[3],
+                "total_n": cnt[0],
+                "success_rate_pct": 100.0 * cnt[1] / max(cnt[0], 1),
+                "source": "manual_input_from_user",
+            }
+        )
+    b_manual = pd.DataFrame(b_manual_rows)
+    b_manual.to_csv(out_tables / "Table_06_B_36ep_outcome_by_object_manual.csv", index=False)
+
+    ab = pd.concat(
+        [
+            by_obj.assign(model="A")[["model", "object", "success_n", "partial_n", "fail_n", "total_n", "success_rate_pct"]],
+            b_manual.assign(model="B")[["model", "object", "success_n", "partial_n", "fail_n", "total_n", "success_rate_pct"]],
+        ],
+        ignore_index=True,
+    )
+    ab.to_csv(out_tables / "Table_07_A_vs_B_36ep_outcome_by_object.csv", index=False)
+
     b_ep_level = eval_root / "eval_task_box_1050_B" / "eval_outcomes.csv"
     b_proxy = eval_root / "eval_task_box_1050_B" / "action_attn_dump_img" / "object_ratio_tables_b_only" / "object_ratio_b_by_outcome_summary.csv"
     table5 = pd.DataFrame(
@@ -201,6 +245,12 @@ def build_tables(
                 "note": "Episode-level B outcome csv not found in current filesystem.",
             },
             {
+                "model": "B (manual)",
+                "episode_level_outcome_source": "Table_06_B_36ep_outcome_by_object_manual.csv",
+                "available": True,
+                "note": "Manually provided 36-episode object-level outcomes (used as fallback).",
+            },
+            {
                 "model": "B (proxy)",
                 "episode_level_outcome_source": str(b_proxy),
                 "available": b_proxy.exists(),
@@ -216,6 +266,8 @@ def build_tables(
         "table3": table3,
         "table4": by_obj,
         "table5": table5,
+        "table6": b_manual,
+        "table7": ab,
     }
 
 
@@ -289,6 +341,54 @@ def fig_02_a_outcomes(table4: pd.DataFrame, out: Path) -> None:
     ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.20))
 
     _save(fig, out / "Fig_02_A_36ep_outcome_by_object.png")
+
+
+def fig_07_b_outcomes_manual(table6: pd.DataFrame, out: Path) -> None:
+    df = table6.copy()
+    x = np.arange(len(df))
+    fig, ax = plt.subplots(figsize=(8.2, 4.5))
+
+    ax.bar(x, df["success_n"], color=PALETTE["outcome_1"], label="Success (outcome=1)")
+    ax.bar(x, df["partial_n"], bottom=df["success_n"], color=PALETTE["outcome_2"], label="Partial (outcome=2)")
+    ax.bar(
+        x,
+        df["fail_n"],
+        bottom=df["success_n"] + df["partial_n"],
+        color=PALETTE["outcome_3"],
+        label="Fail (outcome=3)",
+    )
+    for i, r in enumerate(df["success_rate_pct"]):
+        ax.text(i, df.loc[i, "total_n"] + 0.35, f"{r:.1f}%", ha="center", va="bottom", fontsize=10)
+
+    ax.set_xticks(x, df["object"].tolist())
+    ax.set_ylabel("Episodes (n)")
+    ax.set_ylim(0, max(df["total_n"]) + 2.5)
+    ax.set_title("B Model: 36-Episode Outcome by Object (Manual Source)")
+    ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.20))
+    _save(fig, out / "Fig_07_B_36ep_outcome_by_object_manual.png")
+
+
+def fig_08_a_vs_b_success(table7: pd.DataFrame, out: Path) -> None:
+    df = table7.copy()
+    piv = df.pivot(index="object", columns="model", values="success_rate_pct").reindex(["banana", "socks", "strawberry"])
+    x = np.arange(len(piv))
+    width = 0.36
+
+    fig, ax = plt.subplots(figsize=(8.0, 4.3))
+    b1 = ax.bar(x - width / 2, piv["A"], width=width, color=PALETTE["A_A"], label="A")
+    b2 = ax.bar(x + width / 2, piv["B"], width=width, color=PALETTE["B_B"], label="B")
+
+    for bars in [b1, b2]:
+        for b in bars:
+            y = b.get_height()
+            ax.text(b.get_x() + b.get_width() / 2, y + 1.1, f"{y:.1f}%", ha="center", va="bottom", fontsize=9)
+
+    ax.set_xticks(x, piv.index.tolist())
+    ax.set_ylabel("Success rate (%)")
+    ax.set_ylim(0, 100)
+    ax.set_title("A vs B: Object-wise Success Rate (36 episodes)")
+    ax.legend(loc="upper right")
+    _save(fig, out / "Fig_08_A_vs_B_success_rate_by_object.png")
 
 
 def fig_03_transition(table2: pd.DataFrame, out: Path) -> None:
@@ -484,6 +584,8 @@ def main() -> None:
 
     fig_01_flow(out_figures)
     fig_02_a_outcomes(tables["table4"], out_figures)
+    fig_07_b_outcomes_manual(tables["table6"], out_figures)
+    fig_08_a_vs_b_success(tables["table7"], out_figures)
     fig_03_transition(tables["table2"], out_figures)
     fig_04_progress_main(eval_root, out_figures)
     fig_05_progress_cd(eval_root, out_figures)

@@ -1,0 +1,4 @@
+object,outcome_sequence,success_n,partial_n,fail_n,total_n,success_rate_pct,source
+banana,221222/333232,1,7,4,12,8.333333333333334,manual_input_from_user
+socks,111112/112112,9,3,0,12,75.0,manual_input_from_user
+strawberry,223122/222222,1,10,1,12,8.333333333333334,manual_input_from_user

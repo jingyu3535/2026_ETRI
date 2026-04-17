@@ -17,6 +17,13 @@ Asset roots:
 - Figure: `figures/Fig_02_A_36ep_outcome_by_object.png`
 - Purpose: show object-level imbalance (e.g., socks vs strawberry) before B adaptation discussion.
 
+## 2-1) Section: B Behavior (36 episodes, manual source)
+- Table: `tables/Table_06_B_36ep_outcome_by_object_manual.csv`
+- Table: `tables/Table_07_A_vs_B_36ep_outcome_by_object.csv`
+- Figure: `figures/Fig_07_B_36ep_outcome_by_object_manual.png`
+- Figure: `figures/Fig_08_A_vs_B_success_rate_by_object.png`
+- Purpose: incorporate B 36-episode outcome provided manually when episode-level B csv is absent.
+
 ## 3) Section: Main Causal Observation (A@A -> B@A -> B@B)
 - Table: `tables/Table_02_main_transition_metrics.csv`
 - Figure: `figures/Fig_03_main_transition_deltas.png`
