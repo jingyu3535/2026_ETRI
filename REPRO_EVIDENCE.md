@@ -250,6 +250,15 @@ This file tracks evidence used to avoid memory-only documentation.
   - These commands are documented as the experiment procedure supplied by the user.
   - Re-execution logs of this full SAM2 chain are not yet attached in this repository.
 
+21. D-condition (`task_box_795`) dump artifact presence
+- Source: local filesystem listing on `2026-04-17`
+  - `/home/etri01/논문/eval/eval_task_box_750_D/action_attn_dump_img/_raw_tuned`
+- Values:
+  - `*_action_attn.npz`: `28798`
+  - `*_action_attn_meta.json`: `28798`
+- Note:
+  - D dump artifacts are verified, but D train checkpoint/train_config path is not archived in this workspace.
+
 ## Partial / needs confirmation
 
 1. Remote server exact package lock state at training time
