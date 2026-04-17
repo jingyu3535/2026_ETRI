@@ -249,7 +249,7 @@ Checkpoint list for evaluation:
 | `smolVLA_task_box_750` | `/home/etri01/paper/model/smolVLA_task_box_750/checkpoints/500000/pretrained_model` |
 | `smolVLA_task_box_1050` | `/home/etri01/paper/model/smolVLA_task_box_1050/checkpoints/500000/pretrained_model` |
 | `smolVLA_task_box_1050_toponly` | `/home/etri01/paper/model/smolVLA_task_box_1050_toponly/checkpoints/500000/pretrained_model` |
-| `smolVLA_task_box_795` (D) | `/home/etri01/paper/model/smolVLA_task_box_795/checkpoints/500000/pretrained_model` (dump path: `/home/etri01/논문/eval/eval_task_box_750_D/action_attn_dump_img/_raw_tuned`) |
+| `smolVLA_task_box_795` | `/home/etri01/paper/model/smolVLA_task_box_795/checkpoints/500000/pretrained_model` |
 
 ```bash
 # [Local host] robot-side on-policy evaluation template (run once per checkpoint)
