@@ -1,0 +1,2 @@
+group,total_frames,nonempty_frames,empty_frames,empty_ratio,source
+A_A,28798,28190,608,0.021112577262309883,/home/etri01/paper/eval/hetmap/metrics/server_style_a_a_summary.json

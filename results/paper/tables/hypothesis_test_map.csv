@@ -1,0 +1,5 @@
+hypothesis_id,hypothesis,primary_comparison,primary_metrics,primary_tables,primary_figures,status
+H1,Model change alone (A@A->B@A) reduces object grounding on fixed A frames.,AA_to_BA,"object_ratio,image_mass",T1_fixed_frame_AA_to_BA.csv,G1_fixed_frame_AA_to_BA_pct.png,analyzed
+H2,On-policy B rollouts (B@A->B@B) induce view-allocation shift and further grounding drop.,BA_to_BB,"image_mass,object_ratio",T2_onpolicy_BA_to_BB.csv,G2_onpolicy_BA_to_BB_pct.png,analyzed
+H3,Wrist-camera removal (C) should mitigate shortcut-related degradation.,AA_to_CA,"object_ratio,image_mass",T3_prelim_AA_to_CA_DA.csv,G3_prelim_ablation_object_ratio.png,preliminary
+H4,Dose effect is nonlinear; +45 (D) differs from +300 (B).,AA_to_DA,"object_ratio,image_mass",T3_prelim_AA_to_CA_DA.csv,G4_prelim_dose_image_mass.png,preliminary

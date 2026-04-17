@@ -443,28 +443,62 @@ PYTHONPATH=src /home/etri01/miniforge3/envs/lerobot/bin/python \
   --cameras camera1,camera2
 ```
 
-## 7) Results summary
-Use this section as an index to final paper results. Keep only concise conclusions here; store raw tables/figures in `results/paper/`.
+## 7) Hypotheses and claim order
+This paper release organizes claims by hypothesis, then maps each hypothesis to concrete comparison tables/figures.
 
-Result file locations:
+H1 (fixed-frame model effect):
+- Claim: `A@A -> B@A` already weakens object grounding on the same `A` frames.
+- Primary comparisons: `AA_to_BA`
+- Main files: `results/paper/tables/T1_fixed_frame_AA_to_BA.csv`, `results/paper/figures/G1_fixed_frame_AA_to_BA_pct.png`
+- Additional analysis recommended: report confidence interval by episode bootstrap on the same comparison.
+
+H2 (on-policy state shift):
+- Claim: `B@A -> B@B` induces attention redistribution (wrist up / top down) and additional grounding drop.
+- Primary comparisons: `BA_to_BB`
+- Main files: `results/paper/tables/T2_onpolicy_BA_to_BB.csv`, `results/paper/figures/G2_onpolicy_BA_to_BB_pct.png`
+- Additional analysis recommended: separate early/mid/late rollout windows to localize when shift starts.
+
+H3 (camera shortcut ablation):
+- Claim: removing wrist camera (`C`) should mitigate shortcut dependence.
+- Primary comparisons: `AA_to_CA`
+- Main files: `results/paper/tables/T3_prelim_AA_to_CA_DA.csv`, `results/paper/figures/G3_prelim_ablation_object_ratio.png`
+- Status: `preliminary`
+- Additional analysis recommended: rerun `C@A` with fully unified dump settings and matched stems.
+
+H4 (dose nonlinearity):
+- Claim: +45 dose (`D`) is not equivalent to +300 dose (`B`); degradation depends on dose intensity.
+- Primary comparisons: `AA_to_DA` (+ compare against `AA_to_BA`)
+- Main files: `results/paper/tables/T3_prelim_AA_to_CA_DA.csv`, `results/paper/figures/G4_prelim_dose_image_mass.png`
+- Status: `preliminary`
+- Additional analysis recommended: fit dose-response curve with intermediate doses and report threshold uncertainty.
+
+## 8) Results package (tables + figures)
+Use this section as the index for manuscript-ready assets.
+
+Locations:
 - Tables: `results/paper/tables/`
 - Figures: `results/paper/figures/`
 - Package spec: `docs/paper_release/05_RESULTS_PACKAGE.md`
 
-Recommended reading order (paper flow):
-- `T1_model_effect_AA_vs_BA.csv`: model-only change on fixed A frames (`A@A -> B@A`)
-- `T2_state_shift_BA_vs_BB.csv`: on-policy shift (`B@A -> B@B`)
-- `T3_onpolicy_perf_36ep_A_vs_B.csv`: behavior performance linkage
-- `T4_prelim_CA_DA_vs_AA.csv`: preliminary C/D comparison (explicitly marked preliminary)
-- `S1_full_matrix_all_pairs_all_metrics.csv`: full appendix matrix (`P@A, A@A, B@A, B@B, C@A, D@A`)
+Recommended reading order:
+- `hypothesis_test_map.csv`: H1~H4 to evidence mapping
+- `T0_dual_camera_group_means.csv`: global camera-level baseline table
+- `T1_fixed_frame_AA_to_BA.csv`: H1 core table
+- `T2_onpolicy_BA_to_BB.csv`: H2 core table
+- `T3_prelim_AA_to_CA_DA.csv`: H3/H4 preliminary table
+- `T4_topcam_transition_matrix_PA_AA_BA_CA.csv`: top-camera reference transitions (`P@A/A@A/B@A/C@A`)
+- `T5_topcam_outcome_matrix_PA_AA_BA_BB.csv`: outcome-wise top-camera matrix
+- `G1_fixed_frame_AA_to_BA_pct.png`, `G2_onpolicy_BA_to_BB_pct.png`: primary claim figures
+- `G5_layer_profile_object_ratio_abcd.png`, `G6_layer_profile_image_mass_abcd.png`: layer profile appendix figures
 
-Quick summary points to report:
-- `A@A -> B@A`: object-centered attention decreases on fixed frames.
-- `B@A -> B@B`: image mass redistributes toward wrist-view and away from top-view.
-- On-policy performance (`36ep`) is lower for B than A.
-- `C@A`, `D@A`: no strong conclusion yet; rerun with unified pipeline before final claim.
+Asset regeneration command:
+```bash
+python3 scripts/export_paper_summary_assets.py \
+  --paper_eval_root /home/etri01/paper/eval \
+  --out_root /home/etri01/projects/lerobot/results/paper
+```
 
-## 8) Local code changes summary
+## 9) Local code changes summary
 Core modified files:
 - `src/lerobot/datasets/dataset_tools.py`
 - `src/lerobot/datasets/lerobot_dataset.py`
@@ -476,8 +510,8 @@ Core modified files:
 
 See also `PAPER_RELEASE.md`.
 
-## 9) Security note
+## 10) Security note
 Keep credentials in environment variables only. Do not hardcode tokens or keys.
 
-## 10) Provenance
+## 11) Provenance
 Evidence and source line references are documented in `REPRO_EVIDENCE.md`.

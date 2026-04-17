@@ -1,14 +1,35 @@
 # Paper Result Assets
 
-이 디렉터리는 논문에 직접 연결되는 요약 산출물만 저장합니다.
+This directory stores paper-facing summary artifacts only.
 
-- `tables/`: 최종 통계/요약 CSV
-- `figures/`: 본문/부록용 PNG
+- `tables/`: compact CSVs for claims and appendix checks
+- `figures/`: compact PNGs for manuscript insertion
 
-생성 스크립트:
+Main export command:
 ```bash
-# 권장: /home/etri01/miniforge3/envs/lerobot/bin/python
+# Recommended Python: /home/etri01/miniforge3/envs/lerobot/bin/python
 python3 scripts/export_paper_summary_assets.py \
-  --metrics_root /home/etri01/논문/eval/hetmap/metrics \
+  --paper_eval_root /home/etri01/paper/eval \
   --out_root /home/etri01/projects/lerobot/results/paper
 ```
+
+Core tables:
+- `hypothesis_test_map.csv`
+- `T0_dual_camera_group_means.csv`
+- `T1_fixed_frame_AA_to_BA.csv`
+- `T2_onpolicy_BA_to_BB.csv`
+- `T3_prelim_AA_to_CA_DA.csv`
+- `T4_topcam_group_means_PA_AA_BA_CA.csv`
+- `T4_topcam_transition_matrix_PA_AA_BA_CA.csv`
+- `T5_topcam_outcome_matrix_PA_AA_BA_BB.csv`
+- `T6_b_only_outcome_summary.csv`
+
+Core figures:
+- `G1_fixed_frame_AA_to_BA_pct.png`
+- `G2_onpolicy_BA_to_BB_pct.png`
+- `G3_prelim_ablation_object_ratio.png`
+- `G4_prelim_dose_image_mass.png`
+- `G5_layer_profile_object_ratio_abcd.png`
+- `G6_layer_profile_image_mass_abcd.png`
+- `G7_topcam_object_ratio_groups.png`
+- `G8_topcam_image_ratio_groups.png`
