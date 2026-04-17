@@ -505,33 +505,50 @@ H4 (dose nonlinearity):
 - Additional analysis recommended: fit dose-response curve with intermediate doses and report threshold uncertainty.
 
 ## 8) Results package (tables + figures)
-Use this section as the index for manuscript-ready assets.
+This section now follows the rebuilt paper flow in order.
 
-Current iterative draft (A->B->C->D, step-by-step with markdown tables):
+Current draft files:
 - `results/paper/abcd_story/RESULTS_PACKAGE.md`
+- `results/paper/abcd_story/SECTION8_FLOW_DRAFT.md`
 
-Locations:
-- Tables: `results/paper/tables/`
-- Figures: `results/paper/figures/`
-- Package spec: `docs/paper_release/05_RESULTS_PACKAGE.md`
+### 8.1 Model A baseline outcome (36 episodes)
 
-Recommended reading order:
-- `hypothesis_test_map.csv`: H1~H4 to evidence mapping
-- `T0_dual_camera_group_means.csv`: global camera-level baseline table
-- `T1_fixed_frame_AA_to_BA.csv`: H1 core table
-- `T2_onpolicy_BA_to_BB.csv`: H2 core table
-- `T3_prelim_AA_to_CA_DA.csv`: H3/H4 preliminary table
-- `T4_topcam_transition_matrix_PA_AA_BA_CA.csv`: top-camera reference transitions (`P@A/A@A/B@A/C@A`)
-- `T5_topcam_outcome_matrix_PA_AA_BA_BB.csv`: outcome-wise top-camera matrix
-- `G1_fixed_frame_AA_to_BA_pct.png`, `G2_onpolicy_BA_to_BB_pct.png`: primary claim figures
-- `G5_layer_profile_object_ratio_abcd.png`, `G6_layer_profile_image_mass_abcd.png`: layer profile appendix figures
+Sources:
+- `results/paper/abcd_story/tables/Table_01_A_36ep_outcomes.csv`
+- `results/paper/abcd_story/figures/TableFig_01_A_36ep_outcomes.png`
 
-Asset regeneration command:
-```bash
-python3 scripts/export_paper_summary_assets.py \
-  --paper_eval_root /home/etri01/paper/eval \
-  --out_root /home/etri01/projects/lerobot/results/paper
-```
+| object | 1(success) | 2(attempt fail) | 3(no approach) |
+|---|---:|---:|---:|
+| banana | 4 | 7 | 1 |
+| socks | 11 | 1 | 0 |
+| strawberry | 0 | 9 | 3 |
+
+Interpretation:
+- Model A often reaches the object, but pick quality is weak, especially on strawberry.
+
+### 8.2 P@A vs A@A attention (before Model B)
+
+Image Mass:
+- `results/paper/abcd_story/tables/Table_02_PA_AA_image_mass_by_camera.csv`
+- `results/paper/abcd_story/figures/TableFig_02_PA_AA_image_mass_by_camera.png`
+
+| camera | P@A | A@A | Δ(%) |
+|---|---:|---:|---:|
+| camera1 | 0.291 | 0.231 | -20.3% |
+| camera2 | 0.300 | 0.397 | +32.2% |
+
+Object Ratio:
+- `results/paper/abcd_story/tables/Table_03_PA_AA_object_ratio_by_camera.csv`
+- `results/paper/abcd_story/figures/TableFig_03_PA_AA_object_ratio_by_camera.png`
+
+| camera | P@A | A@A | Δ(%) |
+|---|---:|---:|---:|
+| camera1 | 0.142 | 0.126 | -11.2% |
+| camera2 | 0.023 | 0.033 | +46.8% |
+
+Interpretation:
+- Wrist camera (`camera1`) drops in both metrics from pretrained to A@A.
+- This supports the transition to Model B training with additional pick/place-focused data.
 
 ## 9) Local code changes summary
 Core modified files:
