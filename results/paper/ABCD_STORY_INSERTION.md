@@ -9,24 +9,21 @@ Asset roots:
 
 ## 1) Section: Experiment Setup
 - Table: `tables/Table_01_model_design_abcd.csv`
-- Figure: `figures/Fig_01_experiment_flow_abcd.png`
 - Purpose: state A/B/C/D dataset differences, camera settings, and hypothesis role.
 
 ## 2) Section: Baseline A Behavior (36 episodes)
 - Table: `tables/Table_04_A_36ep_outcome_by_object.csv`
-- Figure: `figures/Fig_02_A_36ep_outcome_by_object.png`
 - Purpose: show object-level imbalance (e.g., socks vs strawberry) before B adaptation discussion.
 
 ## 2-1) Section: B Behavior (36 episodes, manual source)
 - Table: `tables/Table_06_B_36ep_outcome_by_object_manual.csv`
 - Table: `tables/Table_07_A_vs_B_36ep_outcome_by_object.csv`
-- Figure: `figures/Fig_07_B_36ep_outcome_by_object_manual.png`
-- Figure: `figures/Fig_08_A_vs_B_success_rate_by_object.png`
 - Purpose: incorporate B 36-episode outcome provided manually when episode-level B csv is absent.
 
 ## 3) Section: Main Causal Observation (A@A -> B@A -> B@B)
 - Table: `tables/Table_02_main_transition_metrics.csv`
-- Figure: `figures/Fig_03_main_transition_deltas.png`
+- Table: `tables/Table_08_stage_series_AA_BA_BB.csv`
+- Figure: `figures/Fig_03_main_transition_lines.png`
 - Figure: `figures/Fig_04_progress_timeseries_AA_BA_BB.png`
 - Purpose:
   - fixed-frame model effect (`A@A -> B@A`)
@@ -38,11 +35,7 @@ Asset roots:
 - Figure: `figures/Fig_05_progress_timeseries_AA_CA_DA_topcam.png`
 - Purpose: report that C/D currently show limited additional separation under current analysis.
 
-## 5) Section: Hotspot Motivation (Pre-ablation)
-- Figure: `figures/Fig_06_peak_window_object_ratio_AA_BB.png`
-- Purpose: show where strong object-ratio concentration windows appear to motivate hotspot-layer selection.
-
-## 6) Data Availability Note
+## 5) Data Availability Note
 - Table: `tables/Table_05_outcome_source_inventory.csv`
 - Current status:
   - `A` has episode-level outcomes file.

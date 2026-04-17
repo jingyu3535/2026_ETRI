@@ -6,7 +6,6 @@ import shutil
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import numpy as np
 import pandas as pd
 
@@ -19,9 +18,6 @@ PALETTE = {
     "D_A": "#54A24B",
     "camera1": "#B279A2",
     "camera2": "#4C78A8",
-    "outcome_1": "#54A24B",
-    "outcome_2": "#F2CF5B",
-    "outcome_3": "#E45756",
 }
 
 B_MANUAL_OUTCOME_SEQ = {
@@ -40,14 +36,22 @@ def _style() -> None:
             "axes.labelsize": 11,
             "axes.spines.top": False,
             "axes.spines.right": False,
+            "axes.facecolor": "#FAFAFA",
             "axes.grid": True,
-            "grid.alpha": 0.2,
+            "grid.alpha": 0.22,
             "grid.linewidth": 0.8,
+            "grid.color": "#7A7A7A",
             "legend.frameon": False,
-            "figure.dpi": 180,
+            "figure.dpi": 200,
             "savefig.bbox": "tight",
         }
     )
+
+
+def _reset_dir(root: Path) -> None:
+    if root.exists():
+        shutil.rmtree(root)
+    root.mkdir(parents=True, exist_ok=True)
 
 
 def _mkdirs(root: Path) -> tuple[Path, Path]:
@@ -64,6 +68,12 @@ def _copy_tree(src: Path, dst: Path) -> None:
     shutil.copytree(src, dst)
 
 
+def _save(fig: plt.Figure, out_png: Path) -> None:
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_png, dpi=320)
+    plt.close(fig)
+
+
 def _count_outcomes_from_seq(seq: str) -> dict[int, int]:
     digits = [int(ch) for ch in seq.replace("/", "").strip() if ch.isdigit()]
     return {
@@ -74,11 +84,40 @@ def _count_outcomes_from_seq(seq: str) -> dict[int, int]:
     }
 
 
-def build_tables(
-    eval_root: Path,
-    results_table_root: Path,
-    out_tables: Path,
-) -> dict[str, pd.DataFrame]:
+def _to_wide_progress(df: pd.DataFrame) -> pd.DataFrame:
+    if {"metric", "mean", "se"}.issubset(set(df.columns)):
+        wide = (
+            df.pivot_table(
+                index=["group", "camera", "progress", "progress_pct"],
+                columns="metric",
+                values=["mean", "se"],
+                aggfunc="first",
+            )
+            .reset_index()
+            .copy()
+        )
+        wide.columns = [
+            "_".join([c for c in col if str(c) != ""]).strip("_")
+            if isinstance(col, tuple)
+            else str(col)
+            for col in wide.columns
+        ]
+        rename = {
+            "mean_image_ratio": "image_ratio_mean",
+            "se_image_ratio": "image_ratio_se",
+            "mean_object_ratio": "object_ratio_mean",
+            "se_object_ratio": "object_ratio_se",
+            "mean_image_mass": "image_mass_mean",
+            "se_image_mass": "image_mass_se",
+        }
+        for k, v in rename.items():
+            if k in wide.columns:
+                wide = wide.rename(columns={k: v})
+        return wide
+    return df
+
+
+def build_tables(eval_root: Path, results_table_root: Path, out_tables: Path) -> dict[str, pd.DataFrame]:
     t1 = pd.read_csv(results_table_root / "T1_fixed_frame_AA_to_BA.csv")
     t2 = pd.read_csv(results_table_root / "T2_onpolicy_BA_to_BB.csv")
     t3 = pd.read_csv(results_table_root / "T3_prelim_AA_to_CA_DA.csv")
@@ -90,7 +129,6 @@ def build_tables(
                 "train_dataset": "task_box_750",
                 "episodes": 750,
                 "camera_setup": "front+top (camera1+camera2)",
-                "role": "baseline fine-tuned model",
                 "analysis_view": "A@A",
             },
             {
@@ -98,7 +136,6 @@ def build_tables(
                 "train_dataset": "task_box_1050",
                 "episodes": 1050,
                 "camera_setup": "front+top (camera1+camera2)",
-                "role": "A + near-phase +300 episodes",
                 "analysis_view": "B@A, B@B",
             },
             {
@@ -106,7 +143,6 @@ def build_tables(
                 "train_dataset": "task_box_1050_toponly",
                 "episodes": 1050,
                 "camera_setup": "top-only (wrist removed)",
-                "role": "wrist-shortcut ablation",
                 "analysis_view": "C@A",
             },
             {
@@ -114,7 +150,6 @@ def build_tables(
                 "train_dataset": "task_box_795",
                 "episodes": 795,
                 "camera_setup": "front+top (camera1+camera2)",
-                "role": "dose-control (+45 near-phase episodes)",
                 "analysis_view": "D@A",
             },
         ]
@@ -139,8 +174,7 @@ def build_tables(
             "target_mean_object_mass_est",
             "delta_pct_object_mass_est",
         ]
-    ].copy()
-    table2 = table2.rename(
+    ].rename(
         columns={
             "comparison_label": "comparison",
             "base_mean_image_ratio": "base_image_ratio",
@@ -248,187 +282,101 @@ def build_tables(
                 "model": "B (manual)",
                 "episode_level_outcome_source": "Table_06_B_36ep_outcome_by_object_manual.csv",
                 "available": True,
-                "note": "Manually provided 36-episode object-level outcomes (used as fallback).",
+                "note": "Manually provided 36-episode object-level outcomes (fallback source).",
             },
             {
                 "model": "B (proxy)",
                 "episode_level_outcome_source": str(b_proxy),
                 "available": b_proxy.exists(),
-                "note": "Outcome-stratified attention summary exists, but not object-level episode outcomes.",
+                "note": "Outcome-stratified attention summary only; not object-level episode outcomes.",
             },
         ]
     )
     table5.to_csv(out_tables / "Table_05_outcome_source_inventory.csv", index=False)
 
+    # Stage-wise table for line-plot figure (A@A, B@A, B@B)
+    rows = []
+    for cam in ["camera1", "camera2"]:
+        aa_ba = table2[(table2["comparison"] == "A@A -> B@A") & (table2["camera"] == cam)]
+        ba_bb = table2[(table2["comparison"] == "B@A -> B@B") & (table2["camera"] == cam)]
+        if aa_ba.empty or ba_bb.empty:
+            continue
+        aa_ba = aa_ba.iloc[0]
+        ba_bb = ba_bb.iloc[0]
+        rows.extend(
+            [
+                {
+                    "camera": cam,
+                    "stage": "A@A",
+                    "image_ratio": float(aa_ba["base_image_ratio"]),
+                    "object_ratio": float(aa_ba["base_object_ratio"]),
+                    "object_mass": float(aa_ba["base_object_mass"]),
+                },
+                {
+                    "camera": cam,
+                    "stage": "B@A",
+                    "image_ratio": float(aa_ba["target_image_ratio"]),
+                    "object_ratio": float(aa_ba["target_object_ratio"]),
+                    "object_mass": float(aa_ba["target_object_mass"]),
+                },
+                {
+                    "camera": cam,
+                    "stage": "B@B",
+                    "image_ratio": float(ba_bb["target_image_ratio"]),
+                    "object_ratio": float(ba_bb["target_object_ratio"]),
+                    "object_mass": float(ba_bb["target_object_mass"]),
+                },
+            ]
+        )
+    stage = pd.DataFrame(rows)
+    stage["stage"] = pd.Categorical(stage["stage"], categories=["A@A", "B@A", "B@B"], ordered=True)
+    stage = stage.sort_values(["camera", "stage"])
+    stage.to_csv(out_tables / "Table_08_stage_series_AA_BA_BB.csv", index=False)
+
     return {
-        "table1": table1,
         "table2": table2,
-        "table3": table3,
-        "table4": by_obj,
-        "table5": table5,
         "table6": b_manual,
         "table7": ab,
+        "table8": stage,
     }
 
 
-def _save(fig: plt.Figure, out: Path) -> None:
-    out.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out, dpi=300)
-    fig.savefig(out.with_suffix(".pdf"))
-    plt.close(fig)
+def fig_03_stage_lines(stage_table: pd.DataFrame, out: Path) -> None:
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.4), sharex=True)
+    stage_order = ["A@A", "B@A", "B@B"]
+    x = np.arange(len(stage_order))
 
+    for ax, metric, ylabel in [
+        (axes[0], "image_ratio", "Image Ratio"),
+        (axes[1], "object_ratio", "Object Ratio"),
+    ]:
+        for cam in ["camera1", "camera2"]:
+            sub = stage_table[stage_table["camera"] == cam].set_index("stage").reindex(stage_order)
+            y = sub[metric].to_numpy(dtype=float)
+            ax.plot(
+                x,
+                y,
+                color=PALETTE[cam],
+                linewidth=2.6,
+                marker="o",
+                markersize=7,
+                markeredgecolor="white",
+                markeredgewidth=1.0,
+                label=cam,
+                zorder=3,
+            )
+            for xi, yi in zip(x, y, strict=True):
+                ax.text(xi, yi + (0.006 if metric == "image_ratio" else 0.003), f"{yi:.3f}", ha="center", fontsize=9)
+        ax.set_xticks(x, stage_order)
+        ax.set_ylabel(ylabel)
+        ax.set_title(ylabel + " Across A@A -> B@A -> B@B")
+        ax.grid(True, axis="y")
+        ax.set_axisbelow(True)
 
-def fig_01_flow(out: Path) -> None:
-    fig, ax = plt.subplots(figsize=(13, 3.8))
-    ax.axis("off")
-
-    boxes = [
-        ("A", "Model A\n(task_box_750)", 0.06, 0.35, PALETTE["A_A"]),
-        ("B", "Model B\n(+300 near-phase)", 0.31, 0.35, PALETTE["B_A"]),
-        ("C", "Model C\n(top-only ablation)", 0.60, 0.58, PALETTE["C_A"]),
-        ("D", "Model D\n(+45 dose control)", 0.60, 0.12, PALETTE["D_A"]),
-    ]
-    w, h = 0.22, 0.28
-
-    for _, label, x, y, color in boxes:
-        patch = patches.FancyBboxPatch(
-            (x, y),
-            w,
-            h,
-            boxstyle="round,pad=0.02,rounding_size=0.03",
-            linewidth=1.2,
-            edgecolor=color,
-            facecolor="#FFFFFF",
-        )
-        ax.add_patch(patch)
-        ax.text(x + w / 2, y + h / 2, label, ha="center", va="center", fontsize=11, color="#222222")
-
-    arrow_kw = dict(arrowstyle="-|>", mutation_scale=16, linewidth=1.4, color="#444444")
-    ax.add_patch(patches.FancyArrowPatch((0.28, 0.49), (0.31, 0.49), **arrow_kw))
-    ax.add_patch(patches.FancyArrowPatch((0.53, 0.49), (0.60, 0.69), **arrow_kw))
-    ax.add_patch(patches.FancyArrowPatch((0.53, 0.49), (0.60, 0.26), **arrow_kw))
-
-    ax.text(0.435, 0.56, "extra near-phase data", ha="center", va="center", fontsize=10, color="#555555")
-    ax.text(0.86, 0.69, "C@A\n(wrist shortcut ablation)", ha="left", va="center", fontsize=10, color="#444444")
-    ax.text(0.86, 0.26, "D@A\n(dose nonlinearity check)", ha="left", va="center", fontsize=10, color="#444444")
-    ax.set_title("Experiment Flow: A -> B -> {C, D}", fontsize=14, pad=8)
-
-    _save(fig, out / "Fig_01_experiment_flow_abcd.png")
-
-
-def fig_02_a_outcomes(table4: pd.DataFrame, out: Path) -> None:
-    df = table4.copy()
-    x = np.arange(len(df))
-    fig, ax = plt.subplots(figsize=(8.2, 4.5))
-
-    b1 = ax.bar(x, df["success_n"], color=PALETTE["outcome_1"], label="Success (outcome=1)")
-    b2 = ax.bar(x, df["partial_n"], bottom=df["success_n"], color=PALETTE["outcome_2"], label="Partial (outcome=2)")
-    b3 = ax.bar(
-        x,
-        df["fail_n"],
-        bottom=df["success_n"] + df["partial_n"],
-        color=PALETTE["outcome_3"],
-        label="Fail (outcome=3)",
-    )
-
-    for i, r in enumerate(df["success_rate_pct"]):
-        ax.text(i, df.loc[i, "total_n"] + 0.35, f"{r:.1f}%", ha="center", va="bottom", fontsize=10)
-
-    ax.set_xticks(x, df["object"].tolist())
-    ax.set_ylabel("Episodes (n)")
-    ax.set_ylim(0, max(df["total_n"]) + 2.5)
-    ax.set_title("A Model: 36-Episode Outcome by Object")
-    ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.20))
-
-    _save(fig, out / "Fig_02_A_36ep_outcome_by_object.png")
-
-
-def fig_07_b_outcomes_manual(table6: pd.DataFrame, out: Path) -> None:
-    df = table6.copy()
-    x = np.arange(len(df))
-    fig, ax = plt.subplots(figsize=(8.2, 4.5))
-
-    ax.bar(x, df["success_n"], color=PALETTE["outcome_1"], label="Success (outcome=1)")
-    ax.bar(x, df["partial_n"], bottom=df["success_n"], color=PALETTE["outcome_2"], label="Partial (outcome=2)")
-    ax.bar(
-        x,
-        df["fail_n"],
-        bottom=df["success_n"] + df["partial_n"],
-        color=PALETTE["outcome_3"],
-        label="Fail (outcome=3)",
-    )
-    for i, r in enumerate(df["success_rate_pct"]):
-        ax.text(i, df.loc[i, "total_n"] + 0.35, f"{r:.1f}%", ha="center", va="bottom", fontsize=10)
-
-    ax.set_xticks(x, df["object"].tolist())
-    ax.set_ylabel("Episodes (n)")
-    ax.set_ylim(0, max(df["total_n"]) + 2.5)
-    ax.set_title("B Model: 36-Episode Outcome by Object (Manual Source)")
-    ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.20))
-    _save(fig, out / "Fig_07_B_36ep_outcome_by_object_manual.png")
-
-
-def fig_08_a_vs_b_success(table7: pd.DataFrame, out: Path) -> None:
-    df = table7.copy()
-    piv = df.pivot(index="object", columns="model", values="success_rate_pct").reindex(["banana", "socks", "strawberry"])
-    x = np.arange(len(piv))
-    width = 0.36
-
-    fig, ax = plt.subplots(figsize=(8.0, 4.3))
-    b1 = ax.bar(x - width / 2, piv["A"], width=width, color=PALETTE["A_A"], label="A")
-    b2 = ax.bar(x + width / 2, piv["B"], width=width, color=PALETTE["B_B"], label="B")
-
-    for bars in [b1, b2]:
-        for b in bars:
-            y = b.get_height()
-            ax.text(b.get_x() + b.get_width() / 2, y + 1.1, f"{y:.1f}%", ha="center", va="bottom", fontsize=9)
-
-    ax.set_xticks(x, piv.index.tolist())
-    ax.set_ylabel("Success rate (%)")
-    ax.set_ylim(0, 100)
-    ax.set_title("A vs B: Object-wise Success Rate (36 episodes)")
-    ax.legend(loc="upper right")
-    _save(fig, out / "Fig_08_A_vs_B_success_rate_by_object.png")
-
-
-def fig_03_transition(table2: pd.DataFrame, out: Path) -> None:
-    transitions = ["A@A -> B@A", "B@A -> B@B"]
-    cams = ["camera1", "camera2"]
-    width = 0.34
-    x = np.arange(len(transitions))
-
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.3), sharex=True)
-    metrics = [
-        ("delta_image_ratio_pct", "Image Ratio Delta (%)"),
-        ("delta_object_ratio_pct", "Object Ratio Delta (%)"),
-    ]
-
-    for ax, (metric, title) in zip(axes, metrics, strict=True):
-        for i, cam in enumerate(cams):
-            vals = []
-            for tr in transitions:
-                v = table2.loc[(table2["comparison"] == tr) & (table2["camera"] == cam), metric]
-                vals.append(float(v.iloc[0]) if not v.empty else np.nan)
-            xpos = x + (i - 0.5) * width
-            bars = ax.bar(xpos, vals, width=width, color=PALETTE[cam], label=cam)
-            for b in bars:
-                y = b.get_height()
-                ax.text(
-                    b.get_x() + b.get_width() / 2,
-                    y + (1.1 if y >= 0 else -1.8),
-                    f"{y:+.1f}",
-                    ha="center",
-                    va="bottom" if y >= 0 else "top",
-                    fontsize=9,
-                )
-        ax.axhline(0.0, color="#555555", linewidth=1.0)
-        ax.set_title(title)
-        ax.set_xticks(x, transitions)
-        ax.set_ylabel("Delta (%)")
-
-    axes[1].legend(loc="upper right")
-    fig.suptitle("Main Transition Effects by Camera", y=1.04, fontsize=14)
-    _save(fig, out / "Fig_03_main_transition_deltas.png")
+    handles, labels = axes[1].get_legend_handles_labels()
+    fig.legend(handles, labels, ncols=2, loc="upper center", bbox_to_anchor=(0.5, 1.05))
+    fig.suptitle("Main Transition Curve (Camera-wise)", y=1.14, fontsize=14)
+    _save(fig, out / "Fig_03_main_transition_lines.png")
 
 
 def _plot_progress_panel(
@@ -446,70 +394,32 @@ def _plot_progress_panel(
         x = sub["progress_pct"].to_numpy(dtype=float)
         y = sub[f"{metric}_mean"].to_numpy(dtype=float)
         se = sub[f"{metric}_se"].to_numpy(dtype=float)
-        ax.plot(x, y, color=PALETTE[g], linewidth=2.0, label=labels.get(g, g))
+        ax.plot(x, y, color=PALETTE[g], linewidth=2.2, label=labels.get(g, g))
         ax.fill_between(x, y - se, y + se, color=PALETTE[g], alpha=0.16, linewidth=0)
     ax.set_xlim(0, 100)
     ax.set_xlabel("Progress (%)")
-    ax.set_ylabel(metric.replace("_", " "))
-    ax.set_title(f"{camera}")
-
-
-def _to_wide_progress(df: pd.DataFrame) -> pd.DataFrame:
-    if {"metric", "mean", "se"}.issubset(set(df.columns)):
-        wide = (
-            df.pivot_table(
-                index=["group", "camera", "progress", "progress_pct"],
-                columns="metric",
-                values=["mean", "se"],
-                aggfunc="first",
-            )
-            .reset_index()
-            .copy()
-        )
-        wide.columns = [
-            "_".join([c for c in col if str(c) != ""]).strip("_")
-            if isinstance(col, tuple)
-            else str(col)
-            for col in wide.columns
-        ]
-        rename = {
-            "mean_image_ratio": "image_ratio_mean",
-            "se_image_ratio": "image_ratio_se",
-            "mean_object_ratio": "object_ratio_mean",
-            "se_object_ratio": "object_ratio_se",
-            "mean_image_mass": "image_mass_mean",
-            "se_image_mass": "image_mass_se",
-        }
-        for k, v in rename.items():
-            if k in wide.columns:
-                wide = wide.rename(columns={k: v})
-        return wide
-    return df
+    ax.set_ylabel(metric)
 
 
 def fig_04_progress_main(eval_root: Path, out: Path) -> None:
     abcd = _to_wide_progress(pd.read_csv(eval_root / "timeseries/abcd_progress_layer/tables/lineplot_mean_se_abcd.csv"))
     aabb = pd.read_csv(eval_root / "timeseries/new_aa_vs_bb/tables/aggregate_mean_se_aa_vs_bb.csv")
+    data = pd.concat([abcd[abcd["group"].isin(["A_A", "B_A"])], aabb[aabb["group"].isin(["B_B"])]], ignore_index=True)
 
-    use_abcd = abcd[abcd["group"].isin(["A_A", "B_A"])]
-    use_aabb = aabb[aabb["group"].isin(["B_B"])]
-    data = pd.concat([use_abcd, use_aabb], ignore_index=True)
-
-    fig, axes = plt.subplots(2, 2, figsize=(12.0, 7.0), sharex=True)
+    fig, axes = plt.subplots(2, 2, figsize=(12.6, 7.4), sharex=True)
     labels = {"A_A": "A@A", "B_A": "B@A", "B_B": "B@B"}
     groups = ["A_A", "B_A", "B_B"]
 
     for c_idx, cam in enumerate(["camera1", "camera2"]):
         _plot_progress_panel(axes[0, c_idx], data, "image_ratio", cam, groups, labels)
         _plot_progress_panel(axes[1, c_idx], data, "object_ratio", cam, groups, labels)
+        axes[0, c_idx].set_title("wrist (camera1)" if cam == "camera1" else "top (camera2)")
 
-    axes[0, 0].legend(loc="upper left")
-    axes[0, 0].set_title("camera1 (wrist)")
-    axes[0, 1].set_title("camera2 (top)")
     axes[0, 0].set_ylabel("image_ratio")
     axes[1, 0].set_ylabel("object_ratio")
-
-    fig.suptitle("Progress Time-Series: A@A vs B@A vs B@B", y=1.01, fontsize=14)
+    handles, labels_ = axes[0, 1].get_legend_handles_labels()
+    fig.legend(handles, labels_, ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.03))
+    fig.suptitle("Progress Time-Series: A@A vs B@A vs B@B", y=1.10, fontsize=14)
     _save(fig, out / "Fig_04_progress_timeseries_AA_BA_BB.png")
 
 
@@ -517,7 +427,7 @@ def fig_05_progress_cd(eval_root: Path, out: Path) -> None:
     abcd = _to_wide_progress(pd.read_csv(eval_root / "timeseries/abcd_progress_layer/tables/lineplot_mean_se_abcd.csv"))
     sub = abcd[(abcd["group"].isin(["A_A", "C_A", "D_A"])) & (abcd["camera"] == "camera2")]
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.1), sharex=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.5), sharex=True)
     labels = {"A_A": "A@A", "C_A": "C@A", "D_A": "D@A"}
     groups = ["A_A", "C_A", "D_A"]
 
@@ -527,46 +437,21 @@ def fig_05_progress_cd(eval_root: Path, out: Path) -> None:
             x = gsub["progress_pct"].to_numpy(dtype=float)
             y = gsub[f"{metric}_mean"].to_numpy(dtype=float)
             se = gsub[f"{metric}_se"].to_numpy(dtype=float)
-            ax.plot(x, y, color=PALETTE[g], linewidth=2.0, label=labels[g])
+            ax.plot(x, y, color=PALETTE[g], linewidth=2.2, label=labels[g])
             ax.fill_between(x, y - se, y + se, color=PALETTE[g], alpha=0.16, linewidth=0)
         ax.set_title(metric)
         ax.set_xlabel("Progress (%)")
         ax.set_ylabel(metric)
         ax.set_xlim(0, 100)
 
-    axes[0].legend(loc="upper right")
-    fig.suptitle("Top-Camera Progress (Preliminary): A@A vs C@A vs D@A", y=1.03, fontsize=14)
+    handles, labels_ = axes[1].get_legend_handles_labels()
+    fig.legend(handles, labels_, ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.03))
+    fig.suptitle("Top-Camera Progress (Preliminary): A@A vs C@A vs D@A", y=1.10, fontsize=14)
     _save(fig, out / "Fig_05_progress_timeseries_AA_CA_DA_topcam.png")
 
 
-def fig_06_peak_windows(eval_root: Path, out: Path) -> None:
-    df = pd.read_csv(eval_root / "timeseries/new_aa_vs_bb/tables/peak_summary_90pct_window_aa_vs_bb.csv")
-    df = df[df["metric"] == "object_ratio"].copy()
-    df["group_label"] = df["group"].map({"A_A": "A@A", "B_B": "B@B"}).fillna(df["group"])
-    df["camera_label"] = df["camera"].map({"camera1": "wrist", "camera2": "top"})
-
-    fig, ax = plt.subplots(figsize=(9.2, 4.3))
-    y = np.arange(len(df))
-    colors = [PALETTE[g] for g in df["group"].tolist()]
-    ax.barh(y, df["window_width_pct"], color=colors, alpha=0.85)
-
-    for i, row in df.iterrows():
-        ax.text(
-            row["window_width_pct"] + 1.0,
-            int(i),
-            f"{row['window_start_pct']:.0f}-{row['window_end_pct']:.0f}%",
-            va="center",
-            fontsize=9,
-        )
-
-    ax.set_yticks(y, [f"{r['group_label']} / {r['camera_label']}" for _, r in df.iterrows()])
-    ax.set_xlabel("90%-peak window width (%)")
-    ax.set_title("Object-Ratio Peak Window Width (A@A vs B@B)")
-    _save(fig, out / "Fig_06_peak_window_object_ratio_AA_BB.png")
-
-
 def main() -> None:
-    p = argparse.ArgumentParser(description="Build table/figure assets for A->B->C/D paper storyline.")
+    p = argparse.ArgumentParser(description="Build table/figure assets for A->B->C/D storyline.")
     p.add_argument("--eval_root", default="/home/etri01/paper/eval")
     p.add_argument("--results_table_root", default="/home/etri01/projects/lerobot/results/paper/tables")
     p.add_argument("--out_root", default="/home/etri01/paper/figure/abcd_story")
@@ -579,17 +464,13 @@ def main() -> None:
     out_root = Path(args.out_root)
     repo_out_root = Path(args.repo_out_root)
 
+    _reset_dir(out_root)
     out_tables, out_figures = _mkdirs(out_root)
-    tables = build_tables(eval_root, results_table_root, out_tables)
 
-    fig_01_flow(out_figures)
-    fig_02_a_outcomes(tables["table4"], out_figures)
-    fig_07_b_outcomes_manual(tables["table6"], out_figures)
-    fig_08_a_vs_b_success(tables["table7"], out_figures)
-    fig_03_transition(tables["table2"], out_figures)
+    tables = build_tables(eval_root, results_table_root, out_tables)
+    fig_03_stage_lines(tables["table8"], out_figures)
     fig_04_progress_main(eval_root, out_figures)
     fig_05_progress_cd(eval_root, out_figures)
-    fig_06_peak_windows(eval_root, out_figures)
 
     _copy_tree(out_root, repo_out_root)
     print(f"[done] wrote assets to: {out_root}")

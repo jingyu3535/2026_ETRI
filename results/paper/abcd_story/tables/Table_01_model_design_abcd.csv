@@ -1,5 +1,5 @@
-model,train_dataset,episodes,camera_setup,role,analysis_view
-A,task_box_750,750,front+top (camera1+camera2),baseline fine-tuned model,A@A
-B,task_box_1050,1050,front+top (camera1+camera2),A + near-phase +300 episodes,"B@A, B@B"
-C,task_box_1050_toponly,1050,top-only (wrist removed),wrist-shortcut ablation,C@A
-D,task_box_795,795,front+top (camera1+camera2),dose-control (+45 near-phase episodes),D@A
+model,train_dataset,episodes,camera_setup,analysis_view
+A,task_box_750,750,front+top (camera1+camera2),A@A
+B,task_box_1050,1050,front+top (camera1+camera2),"B@A, B@B"
+C,task_box_1050_toponly,1050,top-only (wrist removed),C@A
+D,task_box_795,795,front+top (camera1+camera2),D@A

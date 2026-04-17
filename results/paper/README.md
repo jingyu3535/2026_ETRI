@@ -41,12 +41,8 @@ Storyline package (A->B->C/D):
 - `abcd_story/tables/Table_04_A_36ep_outcome_by_object.csv`
 - `abcd_story/tables/Table_06_B_36ep_outcome_by_object_manual.csv`
 - `abcd_story/tables/Table_07_A_vs_B_36ep_outcome_by_object.csv`
-- `abcd_story/figures/Fig_01_experiment_flow_abcd.png`
-- `abcd_story/figures/Fig_02_A_36ep_outcome_by_object.png`
-- `abcd_story/figures/Fig_07_B_36ep_outcome_by_object_manual.png`
-- `abcd_story/figures/Fig_08_A_vs_B_success_rate_by_object.png`
-- `abcd_story/figures/Fig_03_main_transition_deltas.png`
+- `abcd_story/tables/Table_08_stage_series_AA_BA_BB.csv`
+- `abcd_story/figures/Fig_03_main_transition_lines.png`
 - `abcd_story/figures/Fig_04_progress_timeseries_AA_BA_BB.png`
 - `abcd_story/figures/Fig_05_progress_timeseries_AA_CA_DA_topcam.png`
-- `abcd_story/figures/Fig_06_peak_window_object_ratio_AA_BB.png`
 - Insertion guide: `ABCD_STORY_INSERTION.md`
