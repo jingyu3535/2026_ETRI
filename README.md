@@ -507,6 +507,9 @@ H4 (dose nonlinearity):
 ## 8) Results package (tables + figures)
 Use this section as the index for manuscript-ready assets.
 
+Current iterative draft (A->B->C->D, step-by-step with markdown tables):
+- `results/paper/abcd_story/RESULTS_PACKAGE.md`
+
 Locations:
 - Tables: `results/paper/tables/`
 - Figures: `results/paper/figures/`
