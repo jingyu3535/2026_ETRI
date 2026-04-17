@@ -264,8 +264,8 @@ This file tracks evidence used to avoid memory-only documentation.
 - Values (from `train_config.json`):
   - `dataset.repo_id`: `task_box_795`
   - `dataset.root`: `/home/internship/data/etri01/task_box_795`
-  - `output_dir`: `/home/internship/model/smolVLA_task_box_795_D`
-  - `policy.repo_id`: `internship/temp_model_500000_795_D`
+  - `output_dir`: `/home/internship/model/smolVLA_task_box_795`
+  - `policy.repo_id`: `internship/temp_model_500000_795`
   - `rename_map`: `front->camera1`, `top->camera2`
   - `batch_size=32`, `steps=500000`, `optimizer_lr=5e-5`, `warmup=15000`, `decay=500000`
 - Timestamp note:

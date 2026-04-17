@@ -166,7 +166,7 @@ Run matrix:
 | `smolVLA_task_box_750` | `task_box_750` | `/home/internship/data/etri01/task_box_750` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_750` |
 | `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_1050` |
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `top->camera1` | `/home/internship/model/smolVLA_task_box_1050_toponly` |
-| `smolVLA_task_box_795` | `task_box_795` | `/home/internship/data/etri01/task_box_795` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_795_D` |
+| `smolVLA_task_box_795` | `task_box_795` | `/home/internship/data/etri01/task_box_795` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_795` |
 
 Compatibility note:
 - Original server run for `smolVLA_task_box_750` used legacy dataset id/path `task_box_100`.
@@ -208,7 +208,7 @@ Run-specific values:
 | `smolVLA_task_box_750` | `task_box_750` | `/home/internship/data/etri01/task_box_750` | `internship/temp_model_750` | `/home/internship/model/smolVLA_task_box_750` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
 | `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `internship/temp_model_1050` | `/home/internship/model/smolVLA_task_box_1050` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `internship/temp_model_1050_toponly` | `/home/internship/model/smolVLA_task_box_1050_toponly` | `{"observation.images.top":"observation.images.camera1"}` |
-| `smolVLA_task_box_795` | `task_box_795` | `/home/internship/data/etri01/task_box_795` | `internship/temp_model_500000_795_D` | `/home/internship/model/smolVLA_task_box_795_D` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
+| `smolVLA_task_box_795` | `task_box_795` | `/home/internship/data/etri01/task_box_795` | `internship/temp_model_500000_795` | `/home/internship/model/smolVLA_task_box_795` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
 
 Training changes vs defaults (for 500k runs):
 
