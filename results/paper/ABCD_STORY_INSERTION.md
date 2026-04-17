@@ -24,11 +24,12 @@ Asset roots:
 - Table: `tables/Table_02_main_transition_metrics.csv`
 - Table: `tables/Table_08_stage_series_AA_BA_BB.csv`
 - Figure: `figures/Fig_03_main_transition_lines.png`
-- Figure: `figures/Fig_04_progress_timeseries_AA_BA_BB.png`
+- Figure: `figures/Fig_04_condition_trend_PA_AA_BA_BB.png`
 - Purpose:
   - fixed-frame model effect (`A@A -> B@A`)
   - on-policy shift (`B@A -> B@B`)
   - camera-wise allocation vs grounding changes
+  - contextualize shifts against pretrained reference (`P@A`)
 
 ## 4) Section: Preliminary C/D Check
 - Table: `tables/Table_03_preliminary_cd_metrics.csv`

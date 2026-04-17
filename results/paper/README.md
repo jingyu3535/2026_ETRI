@@ -42,7 +42,8 @@ Storyline package (A->B->C/D):
 - `abcd_story/tables/Table_06_B_36ep_outcome_by_object_manual.csv`
 - `abcd_story/tables/Table_07_A_vs_B_36ep_outcome_by_object.csv`
 - `abcd_story/tables/Table_08_stage_series_AA_BA_BB.csv`
+- `abcd_story/tables/Table_09_condition_series_PA_AA_BA_BB.csv`
 - `abcd_story/figures/Fig_03_main_transition_lines.png`
-- `abcd_story/figures/Fig_04_progress_timeseries_AA_BA_BB.png`
+- `abcd_story/figures/Fig_04_condition_trend_PA_AA_BA_BB.png`
 - `abcd_story/figures/Fig_05_progress_timeseries_AA_CA_DA_topcam.png`
 - Insertion guide: `ABCD_STORY_INSERTION.md`

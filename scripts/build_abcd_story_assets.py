@@ -16,8 +16,8 @@ PALETTE = {
     "B_B": "#E45756",
     "C_A": "#72B7B2",
     "D_A": "#54A24B",
-    "camera1": "#B279A2",
-    "camera2": "#4C78A8",
+    "camera1": "#D94A4A",
+    "camera2": "#2F5BEA",
 }
 
 B_MANUAL_OUTCOME_SEQ = {
@@ -26,21 +26,29 @@ B_MANUAL_OUTCOME_SEQ = {
     "strawberry": "223122/222222",
 }
 
+P_A_FALLBACK = {
+    "camera1": {"image_ratio": 0.286046, "object_ratio": 0.240756},
+    "camera2": {"image_ratio": 0.294939, "object_ratio": 0.084992},
+}
+
 
 def _style() -> None:
     plt.rcParams.update(
         {
             "font.family": "DejaVu Sans",
             "font.size": 11,
-            "axes.titlesize": 13,
+            "axes.titlesize": 12,
             "axes.labelsize": 11,
             "axes.spines.top": False,
             "axes.spines.right": False,
-            "axes.facecolor": "#FAFAFA",
-            "axes.grid": True,
-            "grid.alpha": 0.22,
+            "axes.edgecolor": "#222222",
+            "axes.linewidth": 1.1,
+            "axes.facecolor": "#FFFFFF",
+            "figure.facecolor": "#FFFFFF",
+            "axes.grid": False,
+            "grid.alpha": 1.0,
             "grid.linewidth": 0.8,
-            "grid.color": "#7A7A7A",
+            "grid.color": "#D7DCE3",
             "legend.frameon": False,
             "figure.dpi": 200,
             "savefig.bbox": "tight",
@@ -70,7 +78,7 @@ def _copy_tree(src: Path, dst: Path) -> None:
 
 def _save(fig: plt.Figure, out_png: Path) -> None:
     out_png.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_png, dpi=320)
+    fig.savefig(out_png, dpi=320, facecolor="white", edgecolor="white")
     plt.close(fig)
 
 
@@ -117,6 +125,90 @@ def _to_wide_progress(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _build_stage_table_from_t2(table2: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for cam in ["camera1", "camera2"]:
+        aa_ba = table2[(table2["comparison"] == "A@A -> B@A") & (table2["camera"] == cam)]
+        ba_bb = table2[(table2["comparison"] == "B@A -> B@B") & (table2["camera"] == cam)]
+        if aa_ba.empty or ba_bb.empty:
+            continue
+        aa_ba = aa_ba.iloc[0]
+        ba_bb = ba_bb.iloc[0]
+        rows.extend(
+            [
+                {
+                    "camera": cam,
+                    "stage": "A@A",
+                    "image_ratio": float(aa_ba["base_image_ratio"]),
+                    "object_ratio": float(aa_ba["base_object_ratio"]),
+                    "object_mass": float(aa_ba["base_object_mass"]),
+                },
+                {
+                    "camera": cam,
+                    "stage": "B@A",
+                    "image_ratio": float(aa_ba["target_image_ratio"]),
+                    "object_ratio": float(aa_ba["target_object_ratio"]),
+                    "object_mass": float(aa_ba["target_object_mass"]),
+                },
+                {
+                    "camera": cam,
+                    "stage": "B@B",
+                    "image_ratio": float(ba_bb["target_image_ratio"]),
+                    "object_ratio": float(ba_bb["target_object_ratio"]),
+                    "object_mass": float(ba_bb["target_object_mass"]),
+                },
+            ]
+        )
+    stage = pd.DataFrame(rows)
+    stage["stage"] = pd.Categorical(stage["stage"], categories=["A@A", "B@A", "B@B"], ordered=True)
+    return stage.sort_values(["camera", "stage"])
+
+
+def _build_condition_table_with_pa(stage: pd.DataFrame, results_table_root: Path) -> pd.DataFrame:
+    pa_path = results_table_root / "raw_dump_direct_PA_AA_BA_BB_compare.csv"
+    pa_map = {}
+
+    if pa_path.exists():
+        pa = pd.read_csv(pa_path).set_index("camera")
+        for cam in ["camera1", "camera2"]:
+            if cam in pa.index:
+                pa_map[cam] = {
+                    "image_ratio": float(pa.loc[cam, "P@A_img"]),
+                    "object_ratio": float(pa.loc[cam, "P@A_obj"]),
+                }
+
+    for cam in ["camera1", "camera2"]:
+        if cam not in pa_map:
+            pa_map[cam] = P_A_FALLBACK[cam]
+
+    rows = []
+    for cam in ["camera1", "camera2"]:
+        rows.append(
+            {
+                "camera": cam,
+                "condition": "P@A",
+                "image_ratio": pa_map[cam]["image_ratio"],
+                "object_ratio": pa_map[cam]["object_ratio"],
+                "source": "raw_dump_direct_PA_AA_BA_BB_compare.csv" if pa_path.exists() else "fallback_manual",
+            }
+        )
+        sub = stage[stage["camera"] == cam]
+        for _, r in sub.iterrows():
+            rows.append(
+                {
+                    "camera": cam,
+                    "condition": str(r["stage"]),
+                    "image_ratio": float(r["image_ratio"]),
+                    "object_ratio": float(r["object_ratio"]),
+                    "source": "T2_main_transition",
+                }
+            )
+
+    out = pd.DataFrame(rows)
+    out["condition"] = pd.Categorical(out["condition"], categories=["P@A", "A@A", "B@A", "B@B"], ordered=True)
+    return out.sort_values(["camera", "condition"])
+
+
 def build_tables(eval_root: Path, results_table_root: Path, out_tables: Path) -> dict[str, pd.DataFrame]:
     t1 = pd.read_csv(results_table_root / "T1_fixed_frame_AA_to_BA.csv")
     t2 = pd.read_csv(results_table_root / "T2_onpolicy_BA_to_BB.csv")
@@ -124,34 +216,10 @@ def build_tables(eval_root: Path, results_table_root: Path, out_tables: Path) ->
 
     table1 = pd.DataFrame(
         [
-            {
-                "model": "A",
-                "train_dataset": "task_box_750",
-                "episodes": 750,
-                "camera_setup": "front+top (camera1+camera2)",
-                "analysis_view": "A@A",
-            },
-            {
-                "model": "B",
-                "train_dataset": "task_box_1050",
-                "episodes": 1050,
-                "camera_setup": "front+top (camera1+camera2)",
-                "analysis_view": "B@A, B@B",
-            },
-            {
-                "model": "C",
-                "train_dataset": "task_box_1050_toponly",
-                "episodes": 1050,
-                "camera_setup": "top-only (wrist removed)",
-                "analysis_view": "C@A",
-            },
-            {
-                "model": "D",
-                "train_dataset": "task_box_795",
-                "episodes": 795,
-                "camera_setup": "front+top (camera1+camera2)",
-                "analysis_view": "D@A",
-            },
+            {"model": "A", "train_dataset": "task_box_750", "episodes": 750, "camera_setup": "front+top", "analysis_view": "A@A"},
+            {"model": "B", "train_dataset": "task_box_1050", "episodes": 1050, "camera_setup": "front+top", "analysis_view": "B@A, B@B"},
+            {"model": "C", "train_dataset": "task_box_1050_toponly", "episodes": 1050, "camera_setup": "top-only", "analysis_view": "C@A"},
+            {"model": "D", "train_dataset": "task_box_795", "episodes": 795, "camera_setup": "front+top", "analysis_view": "D@A"},
         ]
     )
     table1.to_csv(out_tables / "Table_01_model_design_abcd.csv", index=False)
@@ -236,12 +304,11 @@ def build_tables(eval_root: Path, results_table_root: Path, out_tables: Path) ->
 
     b_manual_rows = []
     for obj in ["banana", "socks", "strawberry"]:
-        seq = B_MANUAL_OUTCOME_SEQ[obj]
-        cnt = _count_outcomes_from_seq(seq)
+        cnt = _count_outcomes_from_seq(B_MANUAL_OUTCOME_SEQ[obj])
         b_manual_rows.append(
             {
                 "object": obj,
-                "outcome_sequence": seq,
+                "outcome_sequence": B_MANUAL_OUTCOME_SEQ[obj],
                 "success_n": cnt[1],
                 "partial_n": cnt[2],
                 "fail_n": cnt[3],
@@ -294,89 +361,68 @@ def build_tables(eval_root: Path, results_table_root: Path, out_tables: Path) ->
     )
     table5.to_csv(out_tables / "Table_05_outcome_source_inventory.csv", index=False)
 
-    # Stage-wise table for line-plot figure (A@A, B@A, B@B)
-    rows = []
+    table8 = _build_stage_table_from_t2(table2)
+    table8.to_csv(out_tables / "Table_08_stage_series_AA_BA_BB.csv", index=False)
+
+    table9 = _build_condition_table_with_pa(table8, results_table_root)
+    table9.to_csv(out_tables / "Table_09_condition_series_PA_AA_BA_BB.csv", index=False)
+
+    return {"table8": table8, "table9": table9}
+
+
+def _plot_condition_lines(ax: plt.Axes, df: pd.DataFrame, metric: str, title: str, conds: list[str]) -> None:
+    x = np.arange(len(conds))
     for cam in ["camera1", "camera2"]:
-        aa_ba = table2[(table2["comparison"] == "A@A -> B@A") & (table2["camera"] == cam)]
-        ba_bb = table2[(table2["comparison"] == "B@A -> B@B") & (table2["camera"] == cam)]
-        if aa_ba.empty or ba_bb.empty:
+        sub = df[df["camera"] == cam].set_index("condition").reindex(conds)
+        y = sub[metric].to_numpy(dtype=float)
+        if np.all(np.isnan(y)):
             continue
-        aa_ba = aa_ba.iloc[0]
-        ba_bb = ba_bb.iloc[0]
-        rows.extend(
-            [
-                {
-                    "camera": cam,
-                    "stage": "A@A",
-                    "image_ratio": float(aa_ba["base_image_ratio"]),
-                    "object_ratio": float(aa_ba["base_object_ratio"]),
-                    "object_mass": float(aa_ba["base_object_mass"]),
-                },
-                {
-                    "camera": cam,
-                    "stage": "B@A",
-                    "image_ratio": float(aa_ba["target_image_ratio"]),
-                    "object_ratio": float(aa_ba["target_object_ratio"]),
-                    "object_mass": float(aa_ba["target_object_mass"]),
-                },
-                {
-                    "camera": cam,
-                    "stage": "B@B",
-                    "image_ratio": float(ba_bb["target_image_ratio"]),
-                    "object_ratio": float(ba_bb["target_object_ratio"]),
-                    "object_mass": float(ba_bb["target_object_mass"]),
-                },
-            ]
+        ax.plot(
+            x,
+            y,
+            color=PALETTE[cam],
+            linewidth=3.0,
+            marker="o",
+            markersize=8.5,
+            markeredgecolor="white",
+            markeredgewidth=1.2,
+            label=cam,
+            zorder=3,
         )
-    stage = pd.DataFrame(rows)
-    stage["stage"] = pd.Categorical(stage["stage"], categories=["A@A", "B@A", "B@B"], ordered=True)
-    stage = stage.sort_values(["camera", "stage"])
-    stage.to_csv(out_tables / "Table_08_stage_series_AA_BA_BB.csv", index=False)
-
-    return {
-        "table2": table2,
-        "table6": b_manual,
-        "table7": ab,
-        "table8": stage,
-    }
+    ax.set_xticks(x, conds, fontsize=11)
+    ax.set_title(title, loc="left", pad=10, fontsize=12, fontweight="semibold")
+    ax.set_axisbelow(True)
+    ax.grid(True, axis="y")
+    vals = df[metric].to_numpy(dtype=float)
+    vals = vals[np.isfinite(vals)]
+    if vals.size > 0:
+        pad = (vals.max() - vals.min()) * 0.20 if vals.max() > vals.min() else max(vals.max() * 0.2, 0.02)
+        ax.set_ylim(vals.min() - pad * 0.35, vals.max() + pad * 0.30)
 
 
-def fig_03_stage_lines(stage_table: pd.DataFrame, out: Path) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.4), sharex=True)
-    stage_order = ["A@A", "B@A", "B@B"]
-    x = np.arange(len(stage_order))
-
-    for ax, metric, ylabel in [
-        (axes[0], "image_ratio", "Image Ratio"),
-        (axes[1], "object_ratio", "Object Ratio"),
-    ]:
-        for cam in ["camera1", "camera2"]:
-            sub = stage_table[stage_table["camera"] == cam].set_index("stage").reindex(stage_order)
-            y = sub[metric].to_numpy(dtype=float)
-            ax.plot(
-                x,
-                y,
-                color=PALETTE[cam],
-                linewidth=2.6,
-                marker="o",
-                markersize=7,
-                markeredgecolor="white",
-                markeredgewidth=1.0,
-                label=cam,
-                zorder=3,
-            )
-            for xi, yi in zip(x, y, strict=True):
-                ax.text(xi, yi + (0.006 if metric == "image_ratio" else 0.003), f"{yi:.3f}", ha="center", fontsize=9)
-        ax.set_xticks(x, stage_order)
-        ax.set_ylabel(ylabel)
-        ax.set_title(ylabel + " Across A@A -> B@A -> B@B")
-        ax.grid(True, axis="y")
-        ax.set_axisbelow(True)
-
-    handles, labels = axes[1].get_legend_handles_labels()
-    fig.legend(handles, labels, ncols=2, loc="upper center", bbox_to_anchor=(0.5, 1.05))
-    fig.suptitle("Main Transition Curve (Camera-wise)", y=1.14, fontsize=14)
+def fig_03_main_transition_lines(table8: pd.DataFrame, out: Path) -> None:
+    cond = table8.rename(columns={"stage": "condition"}).copy()
+    conds = ["A@A", "B@A", "B@B"]
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.4), sharex=True)
+    _plot_condition_lines(axes[0], cond, "image_ratio", "Image Ratio", conds)
+    _plot_condition_lines(axes[1], cond, "object_ratio", "Object Ratio", conds)
+    axes[0].set_ylabel("ratio")
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, ncols=2, loc="upper center", bbox_to_anchor=(0.5, 1.03))
+    fig.suptitle("Main Transition (A@A -> B@A -> B@B)", y=1.10, fontsize=14, fontweight="semibold")
     _save(fig, out / "Fig_03_main_transition_lines.png")
+
+
+def fig_04_condition_trend_pa(table9: pd.DataFrame, out: Path) -> None:
+    conds = ["P@A", "A@A", "B@A", "B@B"]
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.4), sharex=True)
+    _plot_condition_lines(axes[0], table9, "image_ratio", "Image Ratio", conds)
+    _plot_condition_lines(axes[1], table9, "object_ratio", "Object Ratio", conds)
+    axes[0].set_ylabel("ratio")
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, ncols=2, loc="upper center", bbox_to_anchor=(0.5, 1.03))
+    fig.suptitle("Condition Trend with Pretrained Baseline (P@A)", y=1.10, fontsize=14, fontweight="semibold")
+    _save(fig, out / "Fig_04_condition_trend_PA_AA_BA_BB.png")
 
 
 def _plot_progress_panel(
@@ -394,40 +440,20 @@ def _plot_progress_panel(
         x = sub["progress_pct"].to_numpy(dtype=float)
         y = sub[f"{metric}_mean"].to_numpy(dtype=float)
         se = sub[f"{metric}_se"].to_numpy(dtype=float)
-        ax.plot(x, y, color=PALETTE[g], linewidth=2.2, label=labels.get(g, g))
+        ax.plot(x, y, color=PALETTE[g], linewidth=2.6, label=labels.get(g, g))
         ax.fill_between(x, y - se, y + se, color=PALETTE[g], alpha=0.16, linewidth=0)
     ax.set_xlim(0, 100)
     ax.set_xlabel("Progress (%)")
     ax.set_ylabel(metric)
-
-
-def fig_04_progress_main(eval_root: Path, out: Path) -> None:
-    abcd = _to_wide_progress(pd.read_csv(eval_root / "timeseries/abcd_progress_layer/tables/lineplot_mean_se_abcd.csv"))
-    aabb = pd.read_csv(eval_root / "timeseries/new_aa_vs_bb/tables/aggregate_mean_se_aa_vs_bb.csv")
-    data = pd.concat([abcd[abcd["group"].isin(["A_A", "B_A"])], aabb[aabb["group"].isin(["B_B"])]], ignore_index=True)
-
-    fig, axes = plt.subplots(2, 2, figsize=(12.6, 7.4), sharex=True)
-    labels = {"A_A": "A@A", "B_A": "B@A", "B_B": "B@B"}
-    groups = ["A_A", "B_A", "B_B"]
-
-    for c_idx, cam in enumerate(["camera1", "camera2"]):
-        _plot_progress_panel(axes[0, c_idx], data, "image_ratio", cam, groups, labels)
-        _plot_progress_panel(axes[1, c_idx], data, "object_ratio", cam, groups, labels)
-        axes[0, c_idx].set_title("wrist (camera1)" if cam == "camera1" else "top (camera2)")
-
-    axes[0, 0].set_ylabel("image_ratio")
-    axes[1, 0].set_ylabel("object_ratio")
-    handles, labels_ = axes[0, 1].get_legend_handles_labels()
-    fig.legend(handles, labels_, ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.03))
-    fig.suptitle("Progress Time-Series: A@A vs B@A vs B@B", y=1.10, fontsize=14)
-    _save(fig, out / "Fig_04_progress_timeseries_AA_BA_BB.png")
+    ax.grid(True, axis="y")
+    ax.set_axisbelow(True)
 
 
 def fig_05_progress_cd(eval_root: Path, out: Path) -> None:
     abcd = _to_wide_progress(pd.read_csv(eval_root / "timeseries/abcd_progress_layer/tables/lineplot_mean_se_abcd.csv"))
     sub = abcd[(abcd["group"].isin(["A_A", "C_A", "D_A"])) & (abcd["camera"] == "camera2")]
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.5), sharex=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.5), sharex=True)
     labels = {"A_A": "A@A", "C_A": "C@A", "D_A": "D@A"}
     groups = ["A_A", "C_A", "D_A"]
 
@@ -437,16 +463,18 @@ def fig_05_progress_cd(eval_root: Path, out: Path) -> None:
             x = gsub["progress_pct"].to_numpy(dtype=float)
             y = gsub[f"{metric}_mean"].to_numpy(dtype=float)
             se = gsub[f"{metric}_se"].to_numpy(dtype=float)
-            ax.plot(x, y, color=PALETTE[g], linewidth=2.2, label=labels[g])
+            ax.plot(x, y, color=PALETTE[g], linewidth=2.6, label=labels[g])
             ax.fill_between(x, y - se, y + se, color=PALETTE[g], alpha=0.16, linewidth=0)
-        ax.set_title(metric)
+        ax.set_title(metric, loc="left", pad=10, fontsize=12, fontweight="semibold")
         ax.set_xlabel("Progress (%)")
         ax.set_ylabel(metric)
         ax.set_xlim(0, 100)
+        ax.grid(True, axis="y")
+        ax.set_axisbelow(True)
 
     handles, labels_ = axes[1].get_legend_handles_labels()
-    fig.legend(handles, labels_, ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.03))
-    fig.suptitle("Top-Camera Progress (Preliminary): A@A vs C@A vs D@A", y=1.10, fontsize=14)
+    fig.legend(handles, labels_, ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.04))
+    fig.suptitle("Top-Camera Progress (Preliminary): A@A vs C@A vs D@A", y=1.11, fontsize=14, fontweight="semibold")
     _save(fig, out / "Fig_05_progress_timeseries_AA_CA_DA_topcam.png")
 
 
@@ -468,8 +496,8 @@ def main() -> None:
     out_tables, out_figures = _mkdirs(out_root)
 
     tables = build_tables(eval_root, results_table_root, out_tables)
-    fig_03_stage_lines(tables["table8"], out_figures)
-    fig_04_progress_main(eval_root, out_figures)
+    fig_03_main_transition_lines(tables["table8"], out_figures)
+    fig_04_condition_trend_pa(tables["table9"], out_figures)
     fig_05_progress_cd(eval_root, out_figures)
 
     _copy_tree(out_root, repo_out_root)
