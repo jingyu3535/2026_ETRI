@@ -256,8 +256,21 @@ This file tracks evidence used to avoid memory-only documentation.
 - Values:
   - `*_action_attn.npz`: `28798`
   - `*_action_attn_meta.json`: `28798`
-- Note:
-  - D dump artifacts are verified, but D train checkpoint/train_config path is not archived in this workspace.
+
+22. D-condition (`smolVLA_task_box_795`) train checkpoint/config presence
+- Source: local filesystem listing on `2026-04-17`
+  - `/home/etri01/paper/model/smolVLA_task_box_795/checkpoints/500000/pretrained_model/train_config.json`
+  - `/home/etri01/paper/model/smolVLA_task_box_795/checkpoints/500000/pretrained_model/model.safetensors`
+- Values (from `train_config.json`):
+  - `dataset.repo_id`: `task_box_795`
+  - `dataset.root`: `/home/internship/data/etri01/task_box_795`
+  - `output_dir`: `/home/internship/model/smolVLA_task_box_795_D`
+  - `policy.repo_id`: `internship/temp_model_500000_795_D`
+  - `rename_map`: `front->camera1`, `top->camera2`
+  - `batch_size=32`, `steps=500000`, `optimizer_lr=5e-5`, `warmup=15000`, `decay=500000`
+- Timestamp note:
+  - Local archived `500000` checkpoint file timestamp: `2026-03-11`.
+  - Local workspace copy does not include `020000` checkpoint for this run.
 
 ## Partial / needs confirmation
 

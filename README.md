@@ -151,16 +151,13 @@ Runs reported in this repository:
 - `smolVLA_task_box_1050_toponly` (1050 episodes, top camera only)
 - `smolVLA_task_box_795` (795 episodes, dose-control D condition)
 
-Verified common settings (A/B/C):
+All four runs use:
 - `steps=500000`
 - `batch_size=32`
 - `seed=1000`
 - `policy.optimizer_lr=5e-5`
 - `policy.scheduler_warmup_steps=15000`
 - `policy.scheduler_decay_steps=500000`
-
-D note:
-- `task_box_795` and `D@A` dump artifacts are present, but D train checkpoint/train_config path is not archived in this workspace.
 
 Run matrix:
 
@@ -169,7 +166,7 @@ Run matrix:
 | `smolVLA_task_box_750` | `task_box_750` | `/home/internship/data/etri01/task_box_750` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_750` |
 | `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_1050` |
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `top->camera1` | `/home/internship/model/smolVLA_task_box_1050_toponly` |
-| `smolVLA_task_box_795` | `task_box_795` | `/home/internship/data/etri01/task_box_795` | `front->camera1`, `top->camera2` (expected) | not archived in this repo |
+| `smolVLA_task_box_795` | `task_box_795` | `/home/internship/data/etri01/task_box_795` | `front->camera1`, `top->camera2` | `/home/internship/model/smolVLA_task_box_795_D` |
 
 Compatibility note:
 - Original server run for `smolVLA_task_box_750` used legacy dataset id/path `task_box_100`.
@@ -180,7 +177,7 @@ Run timeline (known dates):
 - `smolVLA_task_box_750`: server checkpoint timestamps show `020000` at `2026-01-23` and `500000` at `2026-01-25`.
 - `smolVLA_task_box_1050`: training log starts on `2026-02-13`, with `020000` checkpoint at `2026-02-13` and `500000` at `2026-02-15`.
 - `smolVLA_task_box_1050_toponly`: server checkpoint timestamps show `020000` at `2026-02-25` and `500000` at `2026-02-27`.
-- `smolVLA_task_box_795`: train timestamp evidence not yet attached (D dump artifacts are available).
+- `smolVLA_task_box_795`: local archived `500000` checkpoint timestamp is `2026-03-11` (no local `020000` copy in this workspace).
 
 500k training command template:
 ```bash
@@ -211,7 +208,7 @@ Run-specific values:
 | `smolVLA_task_box_750` | `task_box_750` | `/home/internship/data/etri01/task_box_750` | `internship/temp_model_750` | `/home/internship/model/smolVLA_task_box_750` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
 | `smolVLA_task_box_1050` | `task_box_1050` | `/home/internship/data/etri01/task_box_1050` | `internship/temp_model_1050` | `/home/internship/model/smolVLA_task_box_1050` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
 | `smolVLA_task_box_1050_toponly` | `task_box_1050_toponly` | `/home/internship/data/etri01/task_box_1050_toponly` | `internship/temp_model_1050_toponly` | `/home/internship/model/smolVLA_task_box_1050_toponly` | `{"observation.images.top":"observation.images.camera1"}` |
-| `smolVLA_task_box_795` | `task_box_795` | `/home/internship/data/etri01/task_box_795` | not archived in this repo | not archived in this repo | expected `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
+| `smolVLA_task_box_795` | `task_box_795` | `/home/internship/data/etri01/task_box_795` | `internship/temp_model_500000_795_D` | `/home/internship/model/smolVLA_task_box_795_D` | `{"observation.images.front":"observation.images.camera1","observation.images.top":"observation.images.camera2"}` |
 
 Training changes vs defaults (for 500k runs):
 
@@ -234,8 +231,9 @@ Reasoning summary:
 
 ## 6) Evaluation and attention dump
 Evaluation protocol used for analysis:
-- Evaluated checkpoints: `smolVLA_task_box_750`, `smolVLA_task_box_1050`, `smolVLA_task_box_1050_toponly`, plus D-condition dump (`smolVLA_task_box_795` -> `D@A`)
-- Robot-side on-policy evaluation data: `12` episodes per checkpoint, `36` episodes total
+- Robot-side on-policy checkpoints: `smolVLA_task_box_750`, `smolVLA_task_box_1050`, `smolVLA_task_box_1050_toponly`
+- Additional D-condition analysis: `smolVLA_task_box_795` was used for cross-dump (`D@A`)
+- Robot-side on-policy evaluation data: `12` episodes per checkpoint, `36` episodes total (A/B/C rollout set)
 - Object placement layouts: two versions (`6` episodes + `6` episodes) per checkpoint
 
 Evaluation dataset naming convention:
@@ -248,10 +246,10 @@ Checkpoint list for evaluation:
 
 | Run | checkpoint path |
 | --- | --- |
-| `smolVLA_task_box_750` | `/home/etri01/model/smolVLA_task_box_750/checkpoints/500000/pretrained_model` |
-| `smolVLA_task_box_1050` | `/home/etri01/model/smolVLA_task_box_1050/checkpoints/500000/pretrained_model` |
-| `smolVLA_task_box_1050_toponly` | `/home/etri01/model/smolVLA_task_box_1050_toponly/checkpoints/500000/pretrained_model` |
-| `smolVLA_task_box_795` (D) | checkpoint path not archived; dump path: `/home/etri01/논문/eval/eval_task_box_750_D/action_attn_dump_img/_raw_tuned` |
+| `smolVLA_task_box_750` | `/home/etri01/paper/model/smolVLA_task_box_750/checkpoints/500000/pretrained_model` |
+| `smolVLA_task_box_1050` | `/home/etri01/paper/model/smolVLA_task_box_1050/checkpoints/500000/pretrained_model` |
+| `smolVLA_task_box_1050_toponly` | `/home/etri01/paper/model/smolVLA_task_box_1050_toponly/checkpoints/500000/pretrained_model` |
+| `smolVLA_task_box_795` (D) | `/home/etri01/paper/model/smolVLA_task_box_795/checkpoints/500000/pretrained_model` (dump path: `/home/etri01/논문/eval/eval_task_box_750_D/action_attn_dump_img/_raw_tuned`) |
 
 ```bash
 # [Local host] robot-side on-policy evaluation template (run once per checkpoint)
