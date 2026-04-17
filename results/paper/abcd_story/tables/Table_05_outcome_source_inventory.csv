@@ -1,0 +1,4 @@
+model,episode_level_outcome_source,available,note
+A,/home/etri01/paper/eval/eval_task_box_750_A/eval_outcomes.csv,True,Used for 36-episode object-level outcome table.
+B,/home/etri01/paper/eval/eval_task_box_1050_B/eval_outcomes.csv,False,Episode-level B outcome csv not found in current filesystem.
+B (proxy),/home/etri01/paper/eval/eval_task_box_1050_B/action_attn_dump_img/object_ratio_tables_b_only/object_ratio_b_by_outcome_summary.csv,True,"Outcome-stratified attention summary exists, but not object-level episode outcomes."

@@ -33,3 +33,16 @@ Core figures:
 - `G6_layer_profile_image_mass_abcd.png`
 - `G7_topcam_object_ratio_groups.png`
 - `G8_topcam_image_ratio_groups.png`
+
+Storyline package (A->B->C/D):
+- `abcd_story/tables/Table_01_model_design_abcd.csv`
+- `abcd_story/tables/Table_02_main_transition_metrics.csv`
+- `abcd_story/tables/Table_03_preliminary_cd_metrics.csv`
+- `abcd_story/tables/Table_04_A_36ep_outcome_by_object.csv`
+- `abcd_story/figures/Fig_01_experiment_flow_abcd.png`
+- `abcd_story/figures/Fig_02_A_36ep_outcome_by_object.png`
+- `abcd_story/figures/Fig_03_main_transition_deltas.png`
+- `abcd_story/figures/Fig_04_progress_timeseries_AA_BA_BB.png`
+- `abcd_story/figures/Fig_05_progress_timeseries_AA_CA_DA_topcam.png`
+- `abcd_story/figures/Fig_06_peak_window_object_ratio_AA_BB.png`
+- Insertion guide: `ABCD_STORY_INSERTION.md`
