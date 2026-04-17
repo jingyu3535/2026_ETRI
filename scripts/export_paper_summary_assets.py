@@ -30,6 +30,20 @@ PAIR_SPECS = [
     ("AA_to_DA", "A_A", "D_A"),
 ]
 
+COLOR_GROUP = {
+    "P_A": "#4C78A8",
+    "A_A": "#54A24B",
+    "B_A": "#E45756",
+    "C_A": "#B279A2",
+    "D_A": "#72B7B2",
+    "B_B": "#F58518",
+}
+
+COLOR_METRIC = {
+    "image_mass": "#4C78A8",
+    "object_ratio": "#E45756",
+}
+
 
 def _ordered(values: list[str], order: list[str]) -> list[str]:
     front = [x for x in order if x in values]
@@ -343,6 +357,70 @@ def _copy_if_exists(src: Path, dst: Path) -> bool:
     return True
 
 
+def _paper_rc() -> dict:
+    # Match common VLA paper style: clean white background, thin gray grid, restrained colors.
+    return {
+        "font.family": "DejaVu Sans",
+        "font.size": 11,
+        "axes.titlesize": 13,
+        "axes.titleweight": "bold",
+        "axes.labelsize": 12,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.facecolor": "#fbfbfb",
+        "figure.facecolor": "white",
+        "savefig.facecolor": "white",
+        "axes.grid": True,
+        "grid.color": "#d9d9d9",
+        "grid.linestyle": "--",
+        "grid.linewidth": 0.8,
+        "grid.alpha": 0.95,
+        "legend.fontsize": 10,
+        "xtick.labelsize": 11,
+        "ytick.labelsize": 11,
+    }
+
+
+def _save_figure(fig, out_png: Path) -> None:
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_png, dpi=280, bbox_inches="tight")
+    fig.savefig(out_png.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+
+
+def _annotate_bar_values(ax, bars, values: list[float]) -> None:
+    for bar, v in zip(bars, values, strict=True):
+        if not np.isfinite(v):
+            continue
+        y_pad = 0.8
+        if v >= 0:
+            y = v + y_pad
+            va = "bottom"
+        else:
+            y = v - y_pad
+            va = "top"
+        ax.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            y,
+            f"{v:+.1f}%",
+            ha="center",
+            va=va,
+            fontsize=9.5,
+            color="#222222",
+            zorder=5,
+        )
+
+
+def _comparison_title(comparison: str) -> str:
+    mapping = {
+        "AA_to_BA": "Fixed-Frame Model Effect (A@A -> B@A)",
+        "BA_to_BB": "On-Policy Shift (B@A -> B@B)",
+        "AA_to_CA": "Ablation Effect (A@A -> C@A)",
+        "AA_to_DA": "Dose Effect (A@A -> D@A)",
+    }
+    return mapping.get(comparison, comparison)
+
+
 def _plot_pair_delta(pair_long: pd.DataFrame, comparison: str, out_png: Path) -> None:
     if not HAS_MATPLOTLIB:
         return
@@ -352,32 +430,51 @@ def _plot_pair_delta(pair_long: pd.DataFrame, comparison: str, out_png: Path) ->
 
     metrics = ["image_mass", "object_ratio"]
     cameras = ["camera1", "camera2"]
-    labels = {"camera1": "Wrist camera", "camera2": "Top camera"}
-    colors = {"image_mass": "#1f77b4", "object_ratio": "#d62728"}
+    cam_label = {"camera1": "Wrist", "camera2": "Top"}
 
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.0), constrained_layout=True)
-    for ax, cam in zip(axes, cameras, strict=True):
-        cur = d[d["camera"] == cam]
-        vals = []
-        for m in metrics:
-            q = cur[cur["metric"] == m]
-            vals.append(float(q.iloc[0]["delta_pct"]) if not q.empty else np.nan)
+    with plt.rc_context(_paper_rc()):
+        fig, ax = plt.subplots(figsize=(8.6, 4.9), constrained_layout=True)
+        x = np.arange(len(cameras), dtype=float)
+        width = 0.34
 
-        x = np.arange(len(metrics))
-        bars = ax.bar(x, vals, width=0.58, color=[colors[m] for m in metrics])
-        ax.axhline(0.0, color="black", linewidth=0.8)
+        # subtle highlight for the first cluster, inspired by common VLA grouped-bar layouts
+        ax.axvspan(-0.5, 0.5, color="#efefef", zorder=0)
+
+        all_vals: list[float] = []
+        for i, metric in enumerate(metrics):
+            vals: list[float] = []
+            for cam in cameras:
+                q = d[(d["camera"] == cam) & (d["metric"] == metric)]
+                vals.append(float(q.iloc[0]["delta_pct"]) if not q.empty else np.nan)
+            all_vals.extend([v for v in vals if np.isfinite(v)])
+            pos = x + (i - 0.5) * width
+            bars = ax.bar(
+                pos,
+                vals,
+                width=width * 0.93,
+                label=metric.replace("_", " "),
+                color=COLOR_METRIC[metric],
+                edgecolor="#3f3f3f",
+                linewidth=0.8,
+                zorder=3,
+            )
+            _annotate_bar_values(ax, bars, vals)
+
+        if all_vals:
+            y_min = float(np.nanmin(all_vals))
+            y_max = float(np.nanmax(all_vals))
+            y_pad = max(2.4, 0.18 * max(1e-6, y_max - y_min))
+            ax.set_ylim(y_min - y_pad, y_max + y_pad)
+
+        ax.axhline(0.0, color="#3a3a3a", linewidth=1.0, zorder=2)
         ax.set_xticks(x)
-        ax.set_xticklabels(["image_mass", "object_ratio"])
-        ax.set_title(labels.get(cam, cam))
-        ax.set_ylabel("Delta (%)")
-        ax.grid(axis="y", alpha=0.25)
-        for bar, v in zip(bars, vals, strict=True):
-            if np.isfinite(v):
-                ax.text(bar.get_x() + bar.get_width() / 2.0, v, f"{v:+.2f}%", ha="center", va="bottom", fontsize=8)
-
-    fig.suptitle(f"{comparison} percent change", fontsize=12)
-    fig.savefig(out_png, dpi=200)
-    plt.close(fig)
+        ax.set_xticklabels([cam_label[c] for c in cameras])
+        ax.set_ylabel("Relative Change (%)")
+        ax.set_title(_comparison_title(comparison))
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.18), ncol=2, frameon=False)
+        ax.grid(axis="y")
+        ax.grid(axis="x", visible=False)
+        _save_figure(fig, out_png)
 
 
 def _plot_ablation_delta(pair_long: pd.DataFrame, out_png: Path, metric: str) -> None:
@@ -390,32 +487,49 @@ def _plot_ablation_delta(pair_long: pd.DataFrame, out_png: Path, metric: str) ->
     cameras = ["camera1", "camera2"]
     comps = ["AA_to_CA", "AA_to_DA"]
     comp_label = {"AA_to_CA": "C@A - A@A", "AA_to_DA": "D@A - A@A"}
-    cam_color = {"camera1": "#2ca02c", "camera2": "#9467bd"}
+    cam_color = {"camera1": "#4C78A8", "camera2": "#E45756"}
 
-    x = np.arange(len(comps))
-    w = 0.34
+    with plt.rc_context(_paper_rc()):
+        x = np.arange(len(comps), dtype=float)
+        w = 0.34
+        fig, ax = plt.subplots(figsize=(7.8, 4.9), constrained_layout=True)
+        ax.axvspan(-0.5, 0.5, color="#efefef", zorder=0)
 
-    fig, ax = plt.subplots(figsize=(7.0, 4.0), constrained_layout=True)
-    for i, cam in enumerate(cameras):
-        vals = []
-        for c in comps:
-            q = d[(d["camera"] == cam) & (d["comparison"] == c)]
-            vals.append(float(q.iloc[0]["delta_pct"]) if not q.empty else np.nan)
-        offs = x + (i - 0.5) * w
-        bars = ax.bar(offs, vals, width=w, label=cam, color=cam_color[cam])
-        for bar, v in zip(bars, vals, strict=True):
-            if np.isfinite(v):
-                ax.text(bar.get_x() + bar.get_width() / 2.0, v, f"{v:+.2f}%", ha="center", va="bottom", fontsize=8)
+        all_vals: list[float] = []
+        for i, cam in enumerate(cameras):
+            vals: list[float] = []
+            for c in comps:
+                q = d[(d["camera"] == cam) & (d["comparison"] == c)]
+                vals.append(float(q.iloc[0]["delta_pct"]) if not q.empty else np.nan)
+            all_vals.extend([v for v in vals if np.isfinite(v)])
+            offs = x + (i - 0.5) * w
+            bars = ax.bar(
+                offs,
+                vals,
+                width=w * 0.93,
+                label=("Wrist" if cam == "camera1" else "Top"),
+                color=cam_color[cam],
+                edgecolor="#3f3f3f",
+                linewidth=0.8,
+                zorder=3,
+            )
+            _annotate_bar_values(ax, bars, vals)
 
-    ax.axhline(0.0, color="black", linewidth=0.8)
-    ax.set_xticks(x)
-    ax.set_xticklabels([comp_label[c] for c in comps])
-    ax.set_ylabel("Delta (%)")
-    ax.set_title(f"Ablation/dose preliminary delta ({metric})")
-    ax.grid(axis="y", alpha=0.25)
-    ax.legend(frameon=False)
-    fig.savefig(out_png, dpi=200)
-    plt.close(fig)
+        if all_vals:
+            y_min = float(np.nanmin(all_vals))
+            y_max = float(np.nanmax(all_vals))
+            y_pad = max(2.2, 0.18 * max(1e-6, y_max - y_min))
+            ax.set_ylim(y_min - y_pad, y_max + y_pad)
+
+        ax.axhline(0.0, color="#3a3a3a", linewidth=1.0, zorder=2)
+        ax.set_xticks(x)
+        ax.set_xticklabels([comp_label[c] for c in comps])
+        ax.set_ylabel("Relative Change (%)")
+        ax.set_title(f"Preliminary Ablation / Dose Delta ({metric})")
+        ax.grid(axis="y")
+        ax.grid(axis="x", visible=False)
+        ax.legend(frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.15))
+        _save_figure(fig, out_png)
 
 
 def _plot_layer_profile(abcd_df: pd.DataFrame, metric: str, out_png: Path) -> None:
@@ -428,29 +542,61 @@ def _plot_layer_profile(abcd_df: pd.DataFrame, metric: str, out_png: Path) -> No
         return
 
     d = _to_float(d, [metric])
-    agg = d.groupby(["camera", "group", "layer"], dropna=False)[metric].mean().reset_index()
+    agg = (
+        d.groupby(["camera", "group", "layer"], dropna=False)[metric]
+        .agg(mean="mean", std="std", n="count")
+        .reset_index()
+    )
+    agg["se"] = agg["std"] / np.sqrt(np.maximum(agg["n"], 1))
 
     cameras = ["camera1", "camera2"]
     groups = ["A_A", "B_A", "C_A", "D_A"]
-    colors = {"A_A": "#1f77b4", "B_A": "#ff7f0e", "C_A": "#2ca02c", "D_A": "#d62728"}
+    with plt.rc_context(_paper_rc()):
+        fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.9), constrained_layout=True)
+        for ax, cam in zip(axes, cameras, strict=True):
+            cur = agg[agg["camera"] == cam]
+            for g in groups:
+                gdf = cur[cur["group"] == g].sort_values("layer")
+                if gdf.empty:
+                    continue
+                x = gdf["layer"].to_numpy(dtype=float)
+                y = gdf["mean"].to_numpy(dtype=float)
+                se = gdf["se"].fillna(0.0).to_numpy(dtype=float)
+                ax.plot(
+                    x,
+                    y,
+                    marker="o",
+                    linewidth=2.0,
+                    markersize=4.2,
+                    color=COLOR_GROUP[g],
+                    label=g,
+                    zorder=3,
+                )
+                ax.fill_between(x, y - se, y + se, color=COLOR_GROUP[g], alpha=0.13, linewidth=0.0, zorder=2)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.2), constrained_layout=True)
-    for ax, cam in zip(axes, cameras, strict=True):
-        cur = agg[agg["camera"] == cam]
-        for g in groups:
-            gdf = cur[cur["group"] == g].sort_values("layer")
-            if gdf.empty:
-                continue
-            ax.plot(gdf["layer"], gdf[metric], marker="o", linewidth=1.8, markersize=4, color=colors[g], label=g)
-        ax.set_title("Wrist" if cam == "camera1" else "Top")
-        ax.set_xlabel("Layer")
-        ax.set_ylabel(metric)
-        ax.set_xticks([1, 3, 5, 7, 9, 11, 13, 15])
-        ax.grid(alpha=0.25)
-    axes[0].legend(frameon=False)
-    fig.suptitle(f"Layer profile ({metric})", fontsize=12)
-    fig.savefig(out_png, dpi=200)
-    plt.close(fig)
+            ax.set_title("Wrist camera" if cam == "camera1" else "Top camera")
+            ax.set_xlabel("Layer")
+            ax.set_ylabel(metric)
+            ax.set_xticks([1, 3, 5, 7, 9, 11, 13, 15])
+            ax.grid(axis="y")
+            ax.grid(axis="x", visible=False)
+
+        merged: dict[str, object] = {}
+        for ax in axes:
+            h, l = ax.get_legend_handles_labels()
+            for hh, ll in zip(h, l, strict=True):
+                if ll not in merged:
+                    merged[ll] = hh
+        fig.legend(
+            list(merged.values()),
+            list(merged.keys()),
+            loc="upper center",
+            bbox_to_anchor=(0.5, 1.03),
+            ncol=4,
+            frameon=False,
+        )
+        fig.suptitle(f"Layer Profile ({metric})", y=1.11)
+        _save_figure(fig, out_png)
 
 
 def _plot_top_group(top_summary: pd.DataFrame, metric: str, out_png: Path) -> None:
@@ -464,20 +610,39 @@ def _plot_top_group(top_summary: pd.DataFrame, metric: str, out_png: Path) -> No
     d["group"] = pd.Categorical(d["group"], categories=TOP_GROUP_ORDER, ordered=True)
     d = d.sort_values("group")
 
-    fig, ax = plt.subplots(figsize=(6.8, 4.0), constrained_layout=True)
-    x = np.arange(len(d))
-    y = d[metric].to_numpy(dtype=float)
-    bars = ax.bar(x, y, color=["#8da0cb", "#66c2a5", "#fc8d62", "#e78ac3"]) 
-    ax.set_xticks(x)
-    ax.set_xticklabels(d["group"].tolist())
-    ax.set_ylabel(metric)
-    ax.set_title(f"Top-camera reference groups ({metric})")
-    ax.grid(axis="y", alpha=0.25)
-    for bar, v in zip(bars, y, strict=True):
-        if np.isfinite(v):
-            ax.text(bar.get_x() + bar.get_width() / 2.0, v, f"{v:.4f}", ha="center", va="bottom", fontsize=8)
-    fig.savefig(out_png, dpi=200)
-    plt.close(fig)
+    with plt.rc_context(_paper_rc()):
+        fig, ax = plt.subplots(figsize=(7.4, 4.9), constrained_layout=True)
+        x = np.arange(len(d), dtype=float)
+        y = d[metric].to_numpy(dtype=float)
+        bar_colors = [COLOR_GROUP[g] for g in d["group"].astype(str).tolist()]
+
+        bars = ax.bar(
+            x,
+            y,
+            width=0.62,
+            color=bar_colors,
+            edgecolor="#3f3f3f",
+            linewidth=0.8,
+            zorder=3,
+        )
+        ax.axvspan(-0.5, 0.5, color="#efefef", zorder=0)
+        ax.set_xticks(x)
+        ax.set_xticklabels(d["group"].astype(str).tolist())
+        ax.set_ylabel(metric)
+        ax.set_title(f"Top-Camera Group Means ({metric})")
+        ax.grid(axis="y")
+        ax.grid(axis="x", visible=False)
+        for bar, v in zip(bars, y, strict=True):
+            if np.isfinite(v):
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2.0,
+                    v + max(1e-4, 0.015 * float(np.nanmax(y))),
+                    f"{v:.4f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=9.2,
+                )
+        _save_figure(fig, out_png)
 
 
 def _hypothesis_table() -> pd.DataFrame:
