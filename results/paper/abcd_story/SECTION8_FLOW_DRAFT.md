@@ -84,3 +84,25 @@ Object Ratio table:
 - B@B에서 image_mass는 camera1 급상승, camera2 급하락으로 재분배된다.
 - object_ratio는 두 camera 모두 하락해 object grounding이 약화된 방향과 일치한다.
 - 따라서 pick->place 구간 집중 학습의 단기 이득은 있으나, 전체 성공률/일반화 측면 개선은 추가 보완이 필요하다.
+
+### 8.7 C, D 모델로 넘어간 이유(가설 전개)
+- Model C(=cam1 제거) 가설:
+  근접구간 위주 추가 데이터(`750 -> +300`)가 wrist-cam shortcut 편향을 만들고, object grounding(top/global + language 연계)을 약화시켰는지 확인.
+- Model D(=750 + 실패지점 45ep) 가설:
+  성능 저하는 근접편향 데이터의 존재 여부뿐 아니라 주입 강도(dose)에 의해 비선형적으로 발생하는지 확인.
+
+연결 문장(본문용):
+- B 단계에서 보인 camera 재분배 + grounding 하락 패턴을 바탕으로, C는 shortcut 경로 자체를 차단하는 검증, D는 dose를 줄여 패턴이 완화되는지 보는 검증으로 설계했다.
+
+### 8.8 C@A, D@A 예비 확인 (별도 표 제시)
+- Numeric source: `tables/Table_16_preliminary_CD_vs_AA_object_ratio.csv`
+
+| comparison | camera | A@A object_ratio | target object_ratio | Δ object_ratio (%) |
+|---|---|---:|---:|---:|
+| AA_to_CA | camera2 | 0.033 | 0.031 | -8.0 |
+| AA_to_DA | camera1 | 0.132 | 0.131 | -0.7 |
+| AA_to_DA | camera2 | 0.033 | 0.031 | -8.2 |
+
+해석 문장(본문용):
+- 현 시점의 예비 비교에서는 C@A, D@A 모두 A@A 대비 뚜렷한 회복 신호가 보이지 않았다.
+- 따라서 C/D는 본문 핵심 결론이라기보다, B에서 제기된 가설을 검증하기 위한 후속 분석 단계로 제시한다.

@@ -652,7 +652,34 @@ Interpretation:
 - On-policy B@B redistributes image attention toward wrist camera (`camera1` up, `camera2` down).
 - However, `object_ratio` falls in both cameras, consistent with degraded grounding and lower real-task reliability.
 
-### 8.7 Training-log reporting policy
+### 8.7 Why we introduced Model C and Model D
+
+Based on the B findings above, we moved to two follow-up hypotheses:
+- Model C (remove `camera1` / wrist input): close-range-heavy `+300` data may bias policy toward wrist shortcut and weaken top/global + language-linked object grounding.
+- Model D (`750 + 45`): degradation may depend on data **dose** (injection strength), not only on whether close-range-heavy data exists.
+
+Transition logic:
+- B showed attention reallocation plus grounding drop.
+- C tests the shortcut hypothesis by removing wrist-view dependence.
+- D tests whether reducing close-range-heavy data from `+300` to `+45` changes the failure pattern.
+
+### 8.8 Preliminary C/D check on A-frame (C@A, D@A)
+
+Source:
+- `results/paper/abcd_story/tables/Table_16_preliminary_CD_vs_AA_object_ratio.csv`
+- (raw source) `results/paper/tables/T3_prelim_AA_to_CA_DA.csv`
+
+| comparison | camera | A@A object_ratio | target object_ratio | Δ object_ratio (%) |
+|---|---|---:|---:|---:|
+| AA_to_CA | camera2 | 0.033 | 0.031 | -8.0 |
+| AA_to_DA | camera1 | 0.132 | 0.131 | -0.7 |
+| AA_to_DA | camera2 | 0.033 | 0.031 | -8.2 |
+
+Preliminary interpretation:
+- In this preliminary view, `C@A` and `D@A` do not show a clear recovery pattern relative to `A@A`.
+- This is why we treat C/D results as ongoing analysis rather than a finalized main claim.
+
+### 8.9 Training-log reporting policy
 
 - Current section above does **not** include raw training logs.
 - Recommended for paper: include one compact log summary table per model (run id, dataset, steps, LR, final loss, selected checkpoint, eval success), and keep full logs as appendix/artifact links.

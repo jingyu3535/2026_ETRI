@@ -125,7 +125,29 @@ Interpretation:
 - Image attention is reallocated toward wrist camera on-policy (`camera1` up, `camera2` down).
 - `object_ratio` decreases in both cameras, consistent with weaker grounding and lower real-task reliability.
 
-## Step 7. Training-log reporting note
+## Step 7. Why we moved to C and D
+
+Hypothesis transition after B:
+- C (top-only / wrist removed): if B is wrist-shortcut biased, removing wrist input should test that shortcut path.
+- D (`750 + 45` dose): if degradation is dose-dependent, reducing close-range-heavy injection from `+300` to `+45` should alter the pattern.
+
+## Step 8. Preliminary C/D check on A-frame
+
+Source files:
+- `tables/Table_16_preliminary_CD_vs_AA_object_ratio.csv`
+- (raw source) `../tables/T3_prelim_AA_to_CA_DA.csv`
+
+| comparison | camera | A@A object_ratio | target object_ratio | Δ object_ratio (%) |
+|---|---|---:|---:|---:|
+| AA_to_CA | camera2 | 0.033 | 0.031 | -8.0 |
+| AA_to_DA | camera1 | 0.132 | 0.131 | -0.7 |
+| AA_to_DA | camera2 | 0.033 | 0.031 | -8.2 |
+
+Interpretation:
+- Preliminary C/D results do not show a clear recovery relative to A@A in this view.
+- We therefore keep C/D as hypothesis-testing follow-up, not as finalized positive evidence yet.
+
+## Step 9. Training-log reporting note
 
 - Raw training logs are not inlined in this draft section.
 - For paper submission, include a compact per-run summary table (run id, dataset, steps, LR, final loss, selected checkpoint, eval success), and keep full logs as appendix/artifact links.

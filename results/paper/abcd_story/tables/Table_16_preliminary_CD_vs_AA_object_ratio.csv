@@ -1,0 +1,4 @@
+comparison,camera,base_group,target_group,A@A_object_ratio,target_object_ratio,delta_pct_object_ratio
+AA_to_CA,camera2,A_A,C_A,0.033,0.031,-8.0
+AA_to_DA,camera1,A_A,D_A,0.132,0.131,-0.7
+AA_to_DA,camera2,A_A,D_A,0.033,0.031,-8.2
