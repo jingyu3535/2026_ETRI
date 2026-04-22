@@ -555,16 +555,16 @@ Interpretation:
 - In `object_ratio`, top camera (`camera2`) increases (`+47.0%`) while wrist camera (`camera1`) decreases (`-11.2%`) from pretrained to A@A.
 - Despite this shift, Model A still struggles in precise picking (Table 8.1, strawberry `0/12`), so wrist-dependent fine manipulation is not reliably solved.
 
+Supplementary check (outcome-stratified, not primary evidence):
+- `results/paper/abcd_story/tables/Table_11_PA_AA_outcome_compare_camera1.csv`
+- `results/paper/abcd_story/tables/Table_12_PA_AA_outcome_compare_camera2.csv`
+- These outcome-split tables are used as a supporting note only: they do not show a strong additional separation between outcomes beyond the main `P@A -> A@A` camera shift (and outcome `3` has small sample size, `n=4` episodes).
+
 ### 8.3 Why we moved to Model B (after tables)
 
 From the two tables above, Model A shows a consistent pattern:
 - behavior: approach is often possible, but fine-grained picking is unstable (especially strawberry),
 - attention: wrist-camera object-referenced attention decreases vs pretrained (`camera1` drop in both metrics).
-
-Supplementary check (outcome-stratified, not primary evidence):
-- `results/paper/abcd_story/tables/Table_11_PA_AA_outcome_compare_camera1.csv`
-- `results/paper/abcd_story/tables/Table_12_PA_AA_outcome_compare_camera2.csv`
-- These outcome-split tables are used as a supporting note only: they do not show a strong additional separation between outcomes beyond the main `P@A -> A@A` camera shift (and outcome `3` has small sample size, `n=4` episodes).
 
 To target this gap, we collected additional close-range data focused on the **pick->place** segment and trained **Model B**:
 - added data: `+300 episodes` (`banana 100`, `socks 100`, `strawberry 100`),
