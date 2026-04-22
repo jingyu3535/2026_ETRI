@@ -558,7 +558,24 @@ Interpretation:
 Supplementary check (outcome-stratified, not primary evidence):
 - `results/paper/abcd_story/tables/Table_11_PA_AA_outcome_compare_camera1.csv`
 - `results/paper/abcd_story/tables/Table_12_PA_AA_outcome_compare_camera2.csv`
-- These outcome-split tables are used as a supporting note only: they do not show a strong additional separation between outcomes beyond the main `P@A -> A@A` camera shift (and outcome `3` has small sample size, `n=4` episodes).
+
+Camera1 (wrist):
+
+| outcome | n_episodes | P@A image_mass | A@A image_mass | Δ image_mass (%) | P@A object_ratio | A@A object_ratio | Δ object_ratio (%) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 15 | 0.290 | 0.230 | -20.8 | 0.219 | 0.196 | -10.8 |
+| 2 | 17 | 0.291 | 0.233 | -19.6 | 0.102 | 0.091 | -11.3 |
+| 3 | 4 | 0.292 | 0.227 | -22.3 | 0.051 | 0.041 | -18.3 |
+
+Camera2 (top):
+
+| outcome | n_episodes | P@A image_mass | A@A image_mass | Δ image_mass (%) | P@A object_ratio | A@A object_ratio | Δ object_ratio (%) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 15 | 0.299 | 0.389 | +30.3 | 0.031 | 0.044 | +42.1 |
+| 2 | 17 | 0.300 | 0.403 | +34.1 | 0.015 | 0.023 | +51.1 |
+| 3 | 4 | 0.306 | 0.404 | +31.9 | 0.023 | 0.037 | +62.0 |
+
+- These outcome-split tables are a supporting note only: they do not provide a stronger additional separation by outcome beyond the main `P@A -> A@A` camera shift (and outcome `3` remains a small sample with `n=4` episodes).
 
 ### 8.3 Why we moved to Model B (after tables)
 
