@@ -64,6 +64,7 @@ To address this gap, we trained Model B with additional close-range pick/place-f
 
 Source file:
 - `tables/Table_04_B_36ep_outcomes.csv`
+- `tables/Table_13_36ep_outcomes_A_B.csv` (A/B side-by-side reference)
 
 | object | 1(success) | 2(attempt fail) | 3(no approach) |
 |---|---:|---:|---:|
@@ -75,7 +76,34 @@ Interpretation:
 - Strawberry pick appears (`0 -> 1`) and fine close-range motion is qualitatively better.
 - But approach-stage recognition errors increase (e.g., banana command but socks in wrist view gets selected), reducing robustness.
 
-## Step 5. B on-policy attention shift (B@A -> B@B)
+## Step 5. Four-condition bridge (P@A, A@A, B@A, B@B)
+
+Source files:
+- `tables/Table_14_PA_AA_BA_BB_image_mass_by_camera.csv`
+- `tables/Table_15_PA_AA_BA_BB_object_ratio_by_camera.csv`
+- `figures/Fig_13_image_mass_trend_PA_AA_BA_BB.png`
+- `figures/Fig_14_object_ratio_trend_PA_AA_BA_BB.png`
+
+Why `B@A` is necessary in the story:
+- `A@A -> B@A` isolates model effect on fixed A-frame inputs.
+- `B@A -> B@B` isolates on-policy rollout/input-distribution effect with model B fixed.
+- Direct `A@A vs B@B` alone mixes both effects.
+
+Image Mass table:
+
+| camera | P@A | A@A | B@A | B@B |
+|---|---:|---:|---:|---:|
+| camera1 | 0.291 | 0.231 | 0.223 | 0.362 |
+| camera2 | 0.300 | 0.397 | 0.405 | 0.276 |
+
+Object Ratio table:
+
+| camera | P@A | A@A | B@A | B@B |
+|---|---:|---:|---:|---:|
+| camera1 | 0.142 | 0.126 | 0.121 | 0.116 |
+| camera2 | 0.023 | 0.033 | 0.029 | 0.017 |
+
+## Step 6. B on-policy attention shift (B@A -> B@B)
 
 Image Mass source:
 - `tables/Table_05_BA_BB_image_mass_by_camera.csv`
@@ -97,7 +125,7 @@ Interpretation:
 - Image attention is reallocated toward wrist camera on-policy (`camera1` up, `camera2` down).
 - `object_ratio` decreases in both cameras, consistent with weaker grounding and lower real-task reliability.
 
-## Step 6. Training-log reporting note
+## Step 7. Training-log reporting note
 
 - Raw training logs are not inlined in this draft section.
 - For paper submission, include a compact per-run summary table (run id, dataset, steps, LR, final loss, selected checkpoint, eval success), and keep full logs as appendix/artifact links.

@@ -591,6 +591,7 @@ To target this gap, we collected additional close-range data focused on the **pi
 
 Source:
 - `results/paper/abcd_story/tables/Table_04_B_36ep_outcomes.csv`
+- `results/paper/abcd_story/tables/Table_13_36ep_outcomes_A_B.csv` (A/B side-by-side reference)
 
 | object | 1(success) | 2(attempt fail) | 3(no approach) |
 |---|---:|---:|---:|
@@ -602,7 +603,34 @@ Interpretation:
 - Strawberry pick appears at least once (`0 -> 1`), and close-range fine motion qualitatively improves.
 - But approach-stage object recognition errors increase (e.g., banana command but socks in wrist view gets selected), so overall robustness drops.
 
-### 8.5 B on-policy attention shift (B@A -> B@B)
+### 8.5 Four-condition bridge (P@A, A@A, B@A, B@B)
+
+Source:
+- `results/paper/abcd_story/tables/Table_14_PA_AA_BA_BB_image_mass_by_camera.csv`
+- `results/paper/abcd_story/tables/Table_15_PA_AA_BA_BB_object_ratio_by_camera.csv`
+- `results/paper/abcd_story/figures/Fig_13_image_mass_trend_PA_AA_BA_BB.png`
+- `results/paper/abcd_story/figures/Fig_14_object_ratio_trend_PA_AA_BA_BB.png`
+
+Why `B@A` is included:
+- `A@A -> B@A` isolates **model effect** on the same A-frame inputs.
+- `B@A -> B@B` isolates **on-policy rollout/input-distribution effect** with model B fixed.
+- Without `B@A`, direct `A@A vs B@B` mixes both effects and the causal story is ambiguous.
+
+Image Mass:
+
+| camera | P@A | A@A | B@A | B@B |
+|---|---:|---:|---:|---:|
+| camera1 | 0.291 | 0.231 | 0.223 | 0.362 |
+| camera2 | 0.300 | 0.397 | 0.405 | 0.276 |
+
+Object Ratio:
+
+| camera | P@A | A@A | B@A | B@B |
+|---|---:|---:|---:|---:|
+| camera1 | 0.142 | 0.126 | 0.121 | 0.116 |
+| camera2 | 0.023 | 0.033 | 0.029 | 0.017 |
+
+### 8.6 B on-policy attention shift (B@A -> B@B)
 
 Image Mass:
 - `results/paper/abcd_story/tables/Table_05_BA_BB_image_mass_by_camera.csv`
@@ -624,7 +652,7 @@ Interpretation:
 - On-policy B@B redistributes image attention toward wrist camera (`camera1` up, `camera2` down).
 - However, `object_ratio` falls in both cameras, consistent with degraded grounding and lower real-task reliability.
 
-### 8.6 Training-log reporting policy
+### 8.7 Training-log reporting policy
 
 - Current section above does **not** include raw training logs.
 - Recommended for paper: include one compact log summary table per model (run id, dataset, steps, LR, final loss, selected checkpoint, eval success), and keep full logs as appendix/artifact links.

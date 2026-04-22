@@ -41,7 +41,30 @@
 - strawberry는 `0 -> 1`로 1회 성공이 나타났고, 근접 구간의 세밀한 동작은 정성적으로 개선된 면이 있다.
 - 하지만 접근 단계에서 목표 object 인식 오류가 증가했다(예: banana 명령인데 wrist에 보이는 socks를 집는 사례).
 
-### 8.5 B on-policy attention 변화 (B@A -> B@B)
+### 8.5 4조건 브릿지 제시 (P@A, A@A, B@A, B@B)
+- Numeric source: `tables/Table_14_PA_AA_BA_BB_image_mass_by_camera.csv`
+- Numeric source: `tables/Table_15_PA_AA_BA_BB_object_ratio_by_camera.csv`
+- Figure source: `figures/Fig_13_image_mass_trend_PA_AA_BA_BB.png`
+- Figure source: `figures/Fig_14_object_ratio_trend_PA_AA_BA_BB.png`
+
+Image Mass table:
+| camera | P@A | A@A | B@A | B@B |
+|---|---:|---:|---:|---:|
+| camera1 | 0.291 | 0.231 | 0.223 | 0.362 |
+| camera2 | 0.300 | 0.397 | 0.405 | 0.276 |
+
+Object Ratio table:
+| camera | P@A | A@A | B@A | B@B |
+|---|---:|---:|---:|---:|
+| camera1 | 0.142 | 0.126 | 0.121 | 0.116 |
+| camera2 | 0.023 | 0.033 | 0.029 | 0.017 |
+
+해석 문장(본문용):
+- `A@A -> B@A`는 입력(A 프레임)을 고정해 모델 자체 효과를 분리한다.
+- `B@A -> B@B`는 모델(B)을 고정해 on-policy 분포 효과를 분리한다.
+- 따라서 `B@A`는 `A@A vs B@B`의 혼합효과를 분해하는 브릿지 조건이다.
+
+### 8.6 B on-policy attention 변화 (B@A -> B@B)
 - Numeric source: `tables/Table_05_BA_BB_image_mass_by_camera.csv`
 - Numeric source: `tables/Table_06_BA_BB_object_ratio_by_camera.csv`
 
