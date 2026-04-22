@@ -561,6 +561,11 @@ From the two tables above, Model A shows a consistent pattern:
 - behavior: approach is often possible, but fine-grained picking is unstable (especially strawberry),
 - attention: wrist-camera object-referenced attention decreases vs pretrained (`camera1` drop in both metrics).
 
+Supplementary check (outcome-stratified, not primary evidence):
+- `results/paper/abcd_story/tables/Table_11_PA_AA_outcome_compare_camera1.csv`
+- `results/paper/abcd_story/tables/Table_12_PA_AA_outcome_compare_camera2.csv`
+- These outcome-split tables are used as a supporting note only: they do not show a strong additional separation between outcomes beyond the main `P@A -> A@A` camera shift (and outcome `3` has small sample size, `n=4` episodes).
+
 To target this gap, we collected additional close-range data focused on the **pick->place** segment and trained **Model B**:
 - added data: `+300 episodes` (`banana 100`, `socks 100`, `strawberry 100`),
 - training set transition: `task_box_750 -> task_box_1050`.

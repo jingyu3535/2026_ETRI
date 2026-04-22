@@ -24,6 +24,7 @@
 
 다음 문단 연결(본문용):
 - 위 두 표를 함께 보면, A 모델은 접근은 가능하지만 집기 정밀도가 낮고(특히 strawberry), wrist-cam attention도 pretrained 대비 약화되어 있다.
+- 보조 확인용 outcome 분할 표(`Table_11`, `Table_12`)를 보면, outcome별 추가 분리 근거는 강하지 않아 본문 핵심 근거로는 사용하지 않는다(특히 outcome3는 표본 `n=4`).
 - 이 한계를 보완하기 위해 pick->place 구간 중심의 근접 데이터를 추가 수집해 Model B를 학습했다.
 - 구체적으로 `+300 episodes`(banana/socks/strawberry 각 100)를 추가해 `task_box_750 -> task_box_1050`으로 확장했다.
 

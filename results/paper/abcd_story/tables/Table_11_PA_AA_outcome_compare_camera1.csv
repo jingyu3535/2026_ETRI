@@ -1,0 +1,4 @@
+outcome,n_episodes,n_frames_P@A,n_frames_A@A,P@A_image_mass,A@A_image_mass,delta_image_mass_pct,P@A_object_ratio,A@A_object_ratio,delta_object_ratio_pct
+1,15,9307,9307,0.29,0.23,-20.8,0.219,0.196,-10.8
+2,17,12414,12414,0.291,0.233,-19.6,0.102,0.091,-11.3
+3,4,2329,2329,0.292,0.227,-22.3,0.051,0.041,-18.3

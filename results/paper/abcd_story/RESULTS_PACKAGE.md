@@ -51,6 +51,11 @@ After the two tables above, the flow is:
 - behavior: Model A can often approach but struggles in precise picking (especially strawberry),
 - attention: wrist camera (`camera1`) decreases in both metrics vs pretrained.
 
+Supplementary note (outcome split, camera-specific only):
+- `tables/Table_11_PA_AA_outcome_compare_camera1.csv`
+- `tables/Table_12_PA_AA_outcome_compare_camera2.csv`
+- Outcome-wise split is treated as supporting context only; it does not provide a strong extra separation by outcome beyond the main `P@A -> A@A` shift. (Outcome `3` is small: `n=4` episodes.)
+
 To address this gap, we trained Model B with additional close-range pick/place-focused data:
 - added episodes: `+300` (`banana 100`, `socks 100`, `strawberry 100`),
 - dataset transition: `task_box_750 -> task_box_1050`.
