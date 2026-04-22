@@ -1,0 +1,7 @@
+model,object,success,attempt_fail,no_approach
+A,banana,4,7,1
+A,socks,11,1,0
+A,strawberry,0,9,3
+B,banana,1,7,4
+B,socks,9,3,0
+B,strawberry,1,10,1
