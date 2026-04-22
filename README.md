@@ -547,7 +547,8 @@ Object Ratio:
 | camera2 | 0.023 | 0.033 | +46.8% |
 
 Interpretation:
-- Wrist camera (`camera1`) drops in both metrics from pretrained to A@A.
+- In `object_ratio`, top camera (`camera2`) increases (`+46.8%`) while wrist camera (`camera1`) decreases (`-11.2%`) from pretrained to A@A.
+- Despite this shift, Model A still struggles in precise picking (Table 8.1, strawberry `0/12`), so wrist-dependent fine manipulation is not reliably solved.
 
 ### 8.3 Why we moved to Model B (after tables)
 
@@ -558,6 +559,48 @@ From the two tables above, Model A shows a consistent pattern:
 To target this gap, we collected additional close-range data focused on the **pick->place** segment and trained **Model B**:
 - added data: `+300 episodes` (`banana 100`, `socks 100`, `strawberry 100`),
 - training set transition: `task_box_750 -> task_box_1050`.
+
+### 8.4 Model B outcome (36 episodes, manual labels)
+
+Source:
+- `results/paper/abcd_story/tables/Table_04_B_36ep_outcomes.csv`
+
+| object | 1(success) | 2(attempt fail) | 3(no approach) |
+|---|---:|---:|---:|
+| banana | 1 | 7 | 4 |
+| socks | 9 | 3 | 0 |
+| strawberry | 1 | 10 | 1 |
+
+Interpretation:
+- Strawberry pick appears at least once (`0 -> 1`), and close-range fine motion qualitatively improves.
+- But approach-stage object recognition errors increase (e.g., banana command but socks in wrist view gets selected), so overall robustness drops.
+
+### 8.5 B on-policy attention shift (B@A -> B@B)
+
+Image Mass:
+- `results/paper/abcd_story/tables/Table_05_BA_BB_image_mass_by_camera.csv`
+
+| camera | B@A | B@B | Δ(%) |
+|---|---:|---:|---:|
+| camera1 | 0.223 | 0.362 | +62.5% |
+| camera2 | 0.405 | 0.276 | -32.0% |
+
+Object Ratio:
+- `results/paper/abcd_story/tables/Table_06_BA_BB_object_ratio_by_camera.csv`
+
+| camera | B@A | B@B | Δ(%) |
+|---|---:|---:|---:|
+| camera1 | 0.121 | 0.116 | -4.3% |
+| camera2 | 0.029 | 0.017 | -40.3% |
+
+Interpretation:
+- On-policy B@B redistributes image attention toward wrist camera (`camera1` up, `camera2` down).
+- However, `object_ratio` falls in both cameras, consistent with degraded grounding and lower real-task reliability.
+
+### 8.6 Training-log reporting policy
+
+- Current section above does **not** include raw training logs.
+- Recommended for paper: include one compact log summary table per model (run id, dataset, steps, LR, final loss, selected checkpoint, eval success), and keep full logs as appendix/artifact links.
 
 ## 9) Local code changes summary
 Core modified files:
