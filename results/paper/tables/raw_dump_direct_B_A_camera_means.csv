@@ -1,0 +1,3 @@
+group,camera,n_valid_frames,image_mass_mean,object_ratio_mean,mask_mode,mask_pad_size,layer_selection,generated_at_utc
+B_A,camera1,24050,0.2230646715852199,0.12130199289050214,soft,512,odd,2026-04-22T02:11:36.507971+00:00
+B_A,camera2,28190,0.4053520703688414,0.029189938543020186,soft,512,odd,2026-04-22T02:11:36.507971+00:00

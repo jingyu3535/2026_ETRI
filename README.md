@@ -528,6 +528,11 @@ Interpretation:
 
 ### 8.2 P@A vs A@A attention (Model A analysis)
 
+Re-aggregation source (soft coverage verification):
+- command: `python scripts/reaggregate_raw_dump_direct_tables.py --out_dir results/paper/tables`
+- compare table: `results/paper/tables/raw_dump_direct_PA_AA_BA_BB_compare.csv`
+- validation report: `results/paper/tables/raw_dump_direct_reaggregation_report.json` (`all_passed=true` expected)
+
 Image Mass:
 - `results/paper/abcd_story/tables/Table_02_PA_AA_image_mass_by_camera.csv`
 - `results/paper/abcd_story/figures/TableFig_02_PA_AA_image_mass_by_camera.png`
@@ -544,10 +549,10 @@ Object Ratio:
 | camera | P@A | A@A | Δ(%) |
 |---|---:|---:|---:|
 | camera1 | 0.142 | 0.126 | -11.2% |
-| camera2 | 0.023 | 0.033 | +46.8% |
+| camera2 | 0.023 | 0.033 | +47.0% |
 
 Interpretation:
-- In `object_ratio`, top camera (`camera2`) increases (`+46.8%`) while wrist camera (`camera1`) decreases (`-11.2%`) from pretrained to A@A.
+- In `object_ratio`, top camera (`camera2`) increases (`+47.0%`) while wrist camera (`camera1`) decreases (`-11.2%`) from pretrained to A@A.
 - Despite this shift, Model A still struggles in precise picking (Table 8.1, strawberry `0/12`), so wrist-dependent fine manipulation is not reliably solved.
 
 ### 8.3 Why we moved to Model B (after tables)
@@ -591,7 +596,7 @@ Object Ratio:
 | camera | B@A | B@B | Δ(%) |
 |---|---:|---:|---:|
 | camera1 | 0.121 | 0.116 | -4.3% |
-| camera2 | 0.029 | 0.017 | -40.3% |
+| camera2 | 0.029 | 0.017 | -40.5% |
 
 Interpretation:
 - On-policy B@B redistributes image attention toward wrist camera (`camera1` up, `camera2` down).

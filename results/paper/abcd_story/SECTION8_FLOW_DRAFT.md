@@ -16,7 +16,7 @@
 
 해석 문장(본문용):
 - camera1(wrist) 기준, `image_mass`는 `0.291 -> 0.231 (-20.3%)`, `object_ratio`는 `0.142 -> 0.126 (-11.2%)`로 모두 감소했다.
-- 동시에 `object_ratio`는 camera2(top)에서 `+46.8%` 상승했다.
+- 동시에 `object_ratio`는 camera2(top)에서 `+47.0%` 상승했다.
 - 즉, pretrained(P@A) 대비 A@A에서 top 참조는 강화되지만 wrist 기반 객체 참조는 약화된 패턴이 관측된다.
 - 그런데 실제 집기 성능(특히 strawberry)은 여전히 낮아, wrist 영향을 많이 받는 정밀 집기 문제가 해결되지 않았다고 볼 수 있다.
 
@@ -54,7 +54,7 @@ Object Ratio table:
 | camera | B@A | B@B | Δ(%) |
 |---|---:|---:|---:|
 | camera1 | 0.121 | 0.116 | -4.3% |
-| camera2 | 0.029 | 0.017 | -40.3% |
+| camera2 | 0.029 | 0.017 | -40.5% |
 
 해석 문장(본문용):
 - B@B에서 image_mass는 camera1 급상승, camera2 급하락으로 재분배된다.

@@ -1,0 +1,46 @@
+{
+  "generated_at_utc": "2026-04-22T02:11:36.507971+00:00",
+  "config": {
+    "mask_mode": "soft",
+    "mask_pad_size": 512,
+    "layer_selection": "odd",
+    "group_order": [
+      "P_A",
+      "A_A",
+      "B_A",
+      "B_B"
+    ],
+    "camera_order": [
+      "camera1",
+      "camera2"
+    ],
+    "paths": {
+      "P_A_dump_dir": "/home/etri01/paper/eval/eval_task_box_750_P/action_attn_dump_img/_raw_base",
+      "A_A_dump_dir": "/home/etri01/paper/eval/eval_task_box_750_A/action_attn_dump_img_all",
+      "B_A_dump_dir": "/home/etri01/paper/eval/eval_task_box_750_B/action_attn_dump_img/_raw_tuned",
+      "B_B_dump_dir": "/home/etri01/paper/eval/eval_task_box_1050_B/action_attn_dump_img/_raw_tuned",
+      "P_A_mask_root": "/home/etri01/paper/eval/eval_task_box_750_A/sam2_large",
+      "A_A_mask_root": "/home/etri01/paper/eval/eval_task_box_750_A/sam2_large",
+      "B_A_mask_root": "/home/etri01/paper/eval/eval_task_box_750_A/sam2_large",
+      "B_B_mask_root": "/home/etri01/paper/eval/eval_task_box_1050_B/sam2_large"
+    }
+  },
+  "total_files_by_group": {
+    "P_A": 28798,
+    "A_A": 28798,
+    "B_A": 28798,
+    "B_B": 28744
+  },
+  "checks": {
+    "all_group_camera_rows_present": true,
+    "all_n_valid_positive": true,
+    "all_total_mass_finite": true,
+    "pct_delta_recompute_match": true,
+    "all_passed": true
+  },
+  "outputs": {
+    "long_csv": "results/paper/tables/raw_dump_direct_reaggregated_long.csv",
+    "all_groups_csv": "results/paper/tables/raw_dump_direct_all_groups_camera_means.csv",
+    "compare_csv": "results/paper/tables/raw_dump_direct_PA_AA_BA_BB_compare.csv"
+  }
+}

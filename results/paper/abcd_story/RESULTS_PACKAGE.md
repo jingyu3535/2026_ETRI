@@ -39,10 +39,10 @@ Source files:
 | camera | P@A | A@A | Δ(%) |
 |---|---:|---:|---:|
 | camera1 | 0.142 | 0.126 | -11.2% |
-| camera2 | 0.023 | 0.033 | +46.8% |
+| camera2 | 0.023 | 0.033 | +47.0% |
 
 Interpretation:
-- `object_ratio` rises on top camera (`camera2`, `+46.8%`) but drops on wrist camera (`camera1`, `-11.2%`).
+- `object_ratio` rises on top camera (`camera2`, `+47.0%`) but drops on wrist camera (`camera1`, `-11.2%`).
 - Despite this shift, precise pick remains weak in Model A (strawberry `0/12`), so wrist-dependent fine manipulation is not reliably solved.
 
 ## Step 3. Why we moved to Model B (after tables)
@@ -86,7 +86,7 @@ Object Ratio source:
 | camera | B@A | B@B | Δ(%) |
 |---|---:|---:|---:|
 | camera1 | 0.121 | 0.116 | -4.3% |
-| camera2 | 0.029 | 0.017 | -40.3% |
+| camera2 | 0.029 | 0.017 | -40.5% |
 
 Interpretation:
 - Image attention is reallocated toward wrist camera on-policy (`camera1` up, `camera2` down).
